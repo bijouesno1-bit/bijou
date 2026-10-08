@@ -93,6 +93,7 @@ export default function Scan() {
     const token = extractToken(raw)
     if (!user || busy) return
     if (!token || token.length > 200 || token.includes('/')) { setRes({ kind: 'unknown' }); return }
+    if (!navigator.onLine) { setRes({ kind: 'error' }); return }
     setBusy(true)
     try {
       const ref = doc(db, 'tickets', token)
@@ -133,8 +134,8 @@ export default function Scan() {
 
   if (res) {
     const t = res.t
-    const style = res.kind === 'ok' ? 'bg-green-600' : res.kind === 'used' ? 'bg-orange-500' : 'bg-bijou-alert'
-    const title = { ok: 'VALIDE', used: 'DÉJÀ UTILISÉ', bad: 'BILLET REFUSÉ', unknown: 'BILLET INCONNU', error: 'ERREUR' }[res.kind]
+    const style = res.kind === 'ok' ? 'bg-green-600' : res.kind === 'error' ? 'bg-orange-500' : res.kind === 'used' ? 'bg-red-800' : 'bg-bijou-alert'
+    const title = { ok: 'VALIDE', used: 'DÉJÀ UTILISÉ', bad: 'BILLET REFUSÉ', unknown: 'BILLET INCONNU', error: 'VÉRIFICATION NÉCESSAIRE' }[res.kind]
     return (
       <div className={`min-h-screen ${style} text-white p-6 flex flex-col items-center justify-center gap-4 text-center`}>
         <p className="text-4xl font-bold">{title}</p>
@@ -147,7 +148,10 @@ export default function Scan() {
           <p className="font-mono">{refOf(t.requestId)}-{t.seq} ({t.seq}/{t.count})</p>
           {res.kind === 'used' && t.usedAt && <p>Entré à {t.usedAt.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>}
         </>}
-        {res.kind === 'error' && <p>Vérifie la connexion et ton rôle, puis réessaie.</p>}
+        {res.kind === 'error' && <>
+          <p className="text-xl">Le serveur n'a pas répondu : ce billet n'est ni validé ni refusé.</p>
+          <p>Ne fais pas entrer sans vérification. Contrôle la connexion et ton rôle, puis scanne à nouveau.</p>
+        </>}
         <button className="rounded-xl bg-white text-black px-6 py-3 font-semibold" onClick={() => { setRes(null); setManual('') }}>Scanner le suivant</button>
       </div>
     )

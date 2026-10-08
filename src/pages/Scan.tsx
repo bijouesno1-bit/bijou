@@ -6,8 +6,9 @@ import { db } from '../lib/firebase'
 import { useAuth } from '../lib/auth'
 import { LoginForm } from '../components/LoginForm'
 import { refOf } from '../lib/requests'
+import { KIND_LABEL, KIND_PLAIN } from '../lib/kinds'
 
-type Tk = { requestId: string; ticketName: string; eventTitle: string; holderName: string; seq: number; count: number; status: string; usedAt?: { toDate: () => Date }; persons?: number; zone?: string; validUntil?: string | null }
+type Tk = { requestId: string; ticketName: string; eventTitle: string; holderName: string; seq: number; count: number; status: string; usedAt?: { toDate: () => Date }; persons?: number; zone?: string; validUntil?: string | null; kind?: string }
 type Res = { kind: 'ok' | 'used' | 'bad' | 'unknown' | 'error'; t?: Tk }
 type Det = { detect: (s: CanvasImageSource) => Promise<{ rawValue: string }[]> }
 
@@ -143,6 +144,7 @@ export default function Scan() {
           <p className="text-xl">{t.holderName}</p>
           <p>{t.eventTitle} · {t.ticketName}</p>
           {(t.persons ?? 1) > 1 && <p className="text-2xl font-bold">{t.persons} personnes autorisées</p>}
+          {t.kind && !KIND_PLAIN.includes(t.kind) && <p className="text-lg font-bold uppercase tracking-widest">{KIND_LABEL[t.kind] ?? t.kind}</p>}
           {t.zone && <p>{t.zone}</p>}
           {res.kind === 'bad' && <p>{t.status === 'expired' ? 'Billet expiré' : t.status === 'revoked' ? 'Billet révoqué' : 'Billet annulé ou non valide'}</p>}
           <p className="font-mono">{refOf(t.requestId)}-{t.seq} ({t.seq}/{t.count})</p>

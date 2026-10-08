@@ -4,10 +4,11 @@ import { doc, getDoc } from 'firebase/firestore'
 import * as QRCode from 'qrcode'
 import { db } from '../lib/firebase'
 import { refOf } from '../lib/requests'
+import { KIND_CARD, KIND_LABEL, KIND_PLAIN } from '../lib/kinds'
 
 type Tk = {
   requestId: string; ticketName: string; eventTitle: string; eventDate: string
-  venue: string; city: string; holderName: string; seq: number; count: number; status: string; persons?: number; zone?: string; validUntil?: string | null
+  venue: string; city: string; holderName: string; seq: number; count: number; status: string; persons?: number; zone?: string; validUntil?: string | null; kind?: string
 }
 
 const base = import.meta.env.BASE_URL
@@ -46,13 +47,17 @@ export default function Billet() {
       {state === 'missing' && <p className="text-bijou-alert text-center">Billet introuvable. Vérifie le lien.</p>}
       {state === 'error' && <p className="text-bijou-alert text-center">Impossible de charger le billet. Réessaie.</p>}
       {state === 'ok' && t && (
-        <div className="w-full max-w-sm rounded-2xl border-2 border-bijou-gold bg-bijou-ivory text-bijou-ink p-5 flex flex-col items-center gap-3">
+        <div className={'w-full max-w-sm rounded-2xl border-2 bg-bijou-ivory text-bijou-ink p-5 flex flex-col items-center gap-3 ' + (KIND_CARD[t.kind ?? 'classic'] ?? KIND_CARD.classic)}>
           <img src={`${base}brand/logo-clair.svg`} alt="BIJOU" className="w-40" />
           <p className="text-xs uppercase tracking-widest opacity-60">Billet authentique</p>
           <h1 className="text-xl font-bold text-center">{t.eventTitle}</h1>
           <p className="text-sm text-center capitalize">{fmt(t.eventDate)}</p>
           <p className="text-sm text-center">{t.venue}, {t.city}</p>
           <div className="rounded-full bg-bijou-ink text-bijou-goldlight px-4 py-1 font-semibold">{t.ticketName}</div>
+          {t.kind && !KIND_PLAIN.includes(t.kind) && (
+            <p className="rounded bg-bijou-gold text-bijou-ink px-2 py-0.5 text-xs font-bold uppercase tracking-widest">{KIND_LABEL[t.kind] ?? t.kind}</p>
+          )}
+          {t.kind === 'invitation' && <p className="text-sm italic">Invitation : entrée gratuite</p>}
           {qr && <img src={qr} alt="QR code du billet" className="w-56 h-56" />}
           <p className="font-mono text-sm">{refOf(t.requestId)}-{t.seq}</p>
           <p className="text-sm">{t.holderName} · billet {t.seq}/{t.count}</p>

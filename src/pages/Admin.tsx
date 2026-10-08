@@ -8,9 +8,11 @@ import { CopyUid } from '../components/CopyUid'
 import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../lib/auth'
+import { StockLine } from '../components/StockLine'
+import { EventStats } from '../components/EventStats'
 
 type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; status: string }
-type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; active: boolean }
+type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; active: boolean }
 
 const base = import.meta.env.BASE_URL
 const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory p-5 flex flex-col items-center gap-4'
@@ -168,8 +170,9 @@ function Dashboard() {
               {ev.status === 'published' ? 'Publié' : 'Brouillon'}
             </span>
           </div>
+          <EventStats tickets={tickets.filter(t => t.eventId === ev.id)} />
           {tickets.filter(t => t.eventId === ev.id).map(t => (
-            <p key={t.id} className="text-sm">• {t.name} : {t.price.toLocaleString('fr-FR')} FCFA · {t.sold}/{t.quantity} vendus</p>
+            <StockLine key={t.id} t={t} />
           ))}
           <TicketForm eventId={ev.id} onDone={load} />
           <button className={btn} onClick={() => toggle(ev)}>{ev.status === 'published' ? 'Dépublier' : 'Publier'}</button>

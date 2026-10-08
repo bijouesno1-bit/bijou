@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { collection, doc, getDocs, orderBy, query, runTransaction, serverTimestamp, where, type Timestamp } from 'firebase/firestore'
+import { PayPanel } from './PayPanel'
 import { db } from '../lib/firebase'
 import { useAuth } from '../lib/auth'
 import { PAY_LABEL, STATUS_LABEL, refOf } from '../lib/requests'
 
 type Req = {
-  id: string; ticketTypeId: string; ticketName: string; unitPrice: number; quantity: number; total: number
+  id: string; eventId: string; ticketTypeId: string; ticketName: string; unitPrice: number; quantity: number; total: number
   customerName: string; phone: string; email?: string; paymentMethod: string; comment?: string
   status: string; adminNote?: string; createdAt?: Timestamp
 }
@@ -60,6 +61,7 @@ export function AdminRequests() {
         if (!rs.exists() || !ts.exists()) throw new Error('Demande ou catégorie introuvable.')
         const cur = rs.data() as Req
         if (cur.status === 'refused') throw new Error('Cette demande est déjà refusée.')
+        if ((cur as { paymentStatus?: string }).paymentStatus === 'confirmed') throw new Error('Billets déjà émis : modification impossible.')
         const t = ts.data() as { quantity: number; sold: number; reserved?: number }
         let reserved = t.reserved ?? 0
         if (status === 'approved' && cur.status !== 'approved') {
@@ -122,6 +124,7 @@ export function AdminRequests() {
           <p className="text-sm"><a className="underline text-bijou-goldlight" href={`tel:${r.phone}`}>{r.phone}</a>{r.email ? ` · ${r.email}` : ''}</p>
           {r.comment && <p className="text-sm rounded-lg bg-black/30 p-2">{r.comment}</p>}
           {r.adminNote && <p className="text-xs text-bijou-silver">Note envoyée : {r.adminNote}</p>}
+          {r.status === 'approved' ? <PayPanel r={r} onDone={load} /> : null}
 
           {r.status !== 'refused' && (
             <>

@@ -47,6 +47,17 @@ service cloud.firestore {
       allow update: if isAdmin();
       allow delete: if false;
     }
+    match /tickets/{token} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if isAdmin();
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+    match /settings/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
     match /auditLogs/{id} {
       allow read: if isAdmin();
       allow create: if isAdmin() && request.resource.data.by == request.auth.uid;

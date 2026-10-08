@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { AdminPaymentSettings } from '../components/AdminPaymentSettings'
 import { AdminRequests } from '../components/AdminRequests'
 import { LoginForm } from '../components/LoginForm'
 import { CopyUid } from '../components/CopyUid'
@@ -117,6 +118,7 @@ function Dashboard() {
       <Header title="BIJOU Admin" />
       {err && <p className="text-bijou-alert text-sm max-w-md text-center">{err}</p>}
 
+      <AdminPaymentSettings />
       <AdminRequests />
 
       <form onSubmit={createEvent} className={card}>

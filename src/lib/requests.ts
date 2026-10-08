@@ -3,6 +3,7 @@ export const STATUS_LABEL: Record<string, string> = {
   approved: 'Approuvée',
   refused: 'Refusée',
   info_needed: 'Informations demandées',
+  paid: 'Paiement confirmé, billets émis',
 }
 export const PAY_LABEL: Record<string, string> = {
   cash: 'Espèces',

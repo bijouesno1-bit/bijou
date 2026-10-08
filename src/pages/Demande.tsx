@@ -26,6 +26,7 @@ export default function Demande() {
   const { id } = useParams()
   const [r, setR] = useState<Req | null>(null)
   const [instr, setInstr] = useState('')
+  const [orgWa, setOrgWa] = useState('')
   const [state, setState] = useState<'loading' | 'ok' | 'missing' | 'error'>('loading')
 
   useEffect(() => {
@@ -37,12 +38,16 @@ export default function Demande() {
       } catch { setState('error'); return }
       try {
         const p = await getDoc(doc(db, 'settings', 'payment'))
-        if (p.exists()) setInstr((p.data() as { text?: string }).text ?? '')
+        if (p.exists()) {
+          const d = p.data() as { text?: string; organizerWa?: string }
+          setInstr(d.text ?? '')
+          setOrgWa(String(d.organizerWa ?? '').replace(/\D/g, ''))
+        }
       } catch { /* ignore */ }
     })()
   }, [id])
 
-  const wa = import.meta.env.VITE_ADMIN_WHATSAPP as string | undefined
+  const wa = orgWa
   const waLink = r && wa
     ? `https://wa.me/${wa}?text=${encodeURIComponent(
         `Nouvelle demande BIJOU ${refOf(r.id)} : ${r.customerName}, ${r.quantity} x ${r.ticketName}, ${r.total.toLocaleString('fr-FR')} FCFA (${PAY_LABEL[r.paymentMethod] ?? r.paymentMethod}). Lien : ${location.origin}${base}#/admin`

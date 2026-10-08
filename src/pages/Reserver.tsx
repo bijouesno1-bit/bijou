@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { addDoc, collection, getDocs, query, serverTimestamp, where } from 'firebase/firestore'
+import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { PAY_LABEL } from '../lib/requests'
 
@@ -21,7 +21,7 @@ function fmtDate(d: string) {
     + ' à ' + x.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
-function ReserveForm({ eventId, tt, left, onClose }: { eventId: string; tt: Tt; left: number; onClose: () => void }) {
+function ReserveForm({ eventId, tt, left, ready, onClose }: { eventId: string; tt: Tt; left: number; ready: boolean; onClose: () => void }) {
   const nav = useNavigate()
   const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
@@ -37,7 +37,7 @@ function ReserveForm({ eventId, tt, left, onClose }: { eventId: string; tt: Tt; 
   async function submit(e: FormEvent) {
     e.preventDefault()
     setErr('')
-    if (hp) return
+    if (hp || !ready) return
     let last = 0
     try { last = Number(localStorage.getItem('bijou_last_req') || 0) } catch { /* ignore */ }
     if (Date.now() - last < 60000) { setErr('Patiente une minute avant une nouvelle demande.'); return }
@@ -83,8 +83,9 @@ function ReserveForm({ eventId, tt, left, onClose }: { eventId: string; tt: Tt; 
       <input value={hp} onChange={e => setHp(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
       <p className="text-sm">Total : <b className="text-bijou-goldlight">{(tt.price * qty).toLocaleString('fr-FR')} FCFA</b></p>
       <p className="text-xs text-bijou-silver">Ta demande sera examinée par l'organisateur. Aucun billet n'est émis avant son accord et la confirmation du paiement.</p>
+      {!ready && <p className="text-bijou-alert text-sm">Les réservations ne sont pas encore ouvertes.</p>}
       {err && <p className="text-bijou-alert text-sm">{err}</p>}
-      <button className={btnGold} disabled={busy}>{busy ? 'Envoi…' : 'Envoyer ma demande'}</button>
+      <button className={btnGold} disabled={busy || !ready}>{busy ? 'Envoi…' : 'Envoyer ma demande'}</button>
       <button type="button" className={btn} onClick={onClose}>Annuler</button>
     </form>
   )
@@ -95,6 +96,13 @@ export default function Reserver() {
   const [tickets, setTickets] = useState<Tt[]>([])
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
   const [open, setOpen] = useState('')
+  const [ready, setReady] = useState(false)
+
+  useEffect(() => {
+    getDoc(doc(db, 'settings', 'payment'))
+      .then(s => setReady(s.exists() && String((s.data() as { organizerWa?: string }).organizerWa ?? '').replace(/\D/g, '').length >= 8))
+      .catch(() => setReady(false))
+  }, [])
 
   useEffect(() => {
     (async () => {
@@ -147,7 +155,7 @@ export default function Reserver() {
                       {left > 0 && open !== t.id && <button className={btn + ' py-1 text-sm'} onClick={() => setOpen(t.id)}>Réserver</button>}
                     </div>
                   </div>
-                  {open === t.id && left > 0 && <ReserveForm eventId={ev.id} tt={t} left={left} onClose={() => setOpen('')} />}
+                  {open === t.id && left > 0 && <ReserveForm eventId={ev.id} tt={t} left={left} ready={ready} onClose={() => setOpen('')} />}
                 </div>
               )
             })}

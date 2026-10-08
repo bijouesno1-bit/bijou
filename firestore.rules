@@ -11,7 +11,11 @@ service cloud.firestore {
     function validRequest() {
       let d = request.resource.data;
       let tt = get(/databases/$(database)/documents/ticketTypes/$(d.ticketTypeId)).data;
-      return d.keys().hasOnly(['eventId','ticketTypeId','ticketName','unitPrice','quantity','total','customerName','phone','email','paymentMethod','comment','status','createdAt'])
+      let pay = get(/databases/$(database)/documents/settings/payment).data;
+      return exists(/databases/$(database)/documents/settings/payment)
+        && pay.get('organizerWa', '') is string
+        && pay.get('organizerWa', '').size() >= 8
+        && d.keys().hasOnly(['eventId','ticketTypeId','ticketName','unitPrice','quantity','total','customerName','phone','email','paymentMethod','comment','status','createdAt'])
         && d.keys().hasAll(['eventId','ticketTypeId','ticketName','unitPrice','quantity','total','customerName','phone','paymentMethod','status','createdAt'])
         && d.status == 'pending'
         && d.createdAt == request.time

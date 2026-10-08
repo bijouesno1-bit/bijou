@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { AdminPaymentSettings } from '../components/AdminPaymentSettings'
 import { AdminRequests } from '../components/AdminRequests'
 import { AdminAgents } from '../components/AdminAgents'
+import { AdminCheckpoints } from '../components/AdminCheckpoints'
 import { LoginForm } from '../components/LoginForm'
 import { CopyUid } from '../components/CopyUid'
 import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore'
@@ -148,6 +149,7 @@ function Dashboard() {
       <AdminPaymentSettings />
       <AdminRequests />
       <AdminAgents />
+      <AdminCheckpoints />
 
       <form onSubmit={createEvent} className={card}>
         <h2 className="text-bijou-goldlight">Nouvel événement</h2>

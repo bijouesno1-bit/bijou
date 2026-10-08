@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { addDoc, collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { addDoc, collection, doc, getDocs, query, runTransaction, serverTimestamp, where } from 'firebase/firestore'
 import jsQR from 'jsqr'
 import { db } from '../lib/firebase'
 import { useAuth } from '../lib/auth'
@@ -89,6 +89,21 @@ export default function Scan() {
   const [res, setRes] = useState<Res | null>(null)
   const [busy, setBusy] = useState(false)
   const [manual, setManual] = useState('')
+  const [gates, setGates] = useState<{ id: string; name: string }[]>([])
+  const [gate, setGate] = useState(() => { try { return localStorage.getItem('bijou_gate') ?? '' } catch { return '' } })
+  const gateName = gates.find(g => g.id === gate)?.name ?? ''
+
+  useEffect(() => {
+    if (!user || !isStaff) return
+    getDocs(query(collection(db, 'checkpoints'), where('active', '==', true)))
+      .then(s => setGates(
+        s.docs
+          .map(d => ({ id: d.id, name: String((d.data() as { name?: string }).name ?? '') }))
+          .filter(g => g.name)
+          .sort((a, b) => a.name.localeCompare(b.name))
+      ))
+      .catch(() => { /* ignoré : les scans restent possibles sans porte */ })
+  }, [user, isStaff])
 
   async function check(raw: string) {
     const token = extractToken(raw)
@@ -109,7 +124,7 @@ export default function Scan() {
         return { kind: 'ok', t }
       })
       setRes(r)
-      addDoc(collection(db, 'scans'), { ticketId: token, result: r.kind, by: user.uid, at: serverTimestamp() }).catch(() => {})
+      addDoc(collection(db, 'scans'), { ticketId: token, result: r.kind, by: user.uid, at: serverTimestamp(), ...(gateName ? { checkpoint: gateName, checkpointId: gate } : {}) }).catch(() => {})
     } catch {
       setRes({ kind: 'error' })
     }
@@ -162,6 +177,13 @@ export default function Scan() {
   return (
     <div className={bg}>
       <h1 className="text-xl text-bijou-goldlight">BIJOU Scan</h1>
+      {gates.length > 0 && (
+        <select className={input + ' max-w-md'} value={gate} onChange={e => { setGate(e.target.value); try { localStorage.setItem('bijou_gate', e.target.value) } catch { /* ignoré */ } }}>
+          <option value="">Choisir ma porte…</option>
+          {gates.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
+        </select>
+      )}
+      {gates.length > 0 && !gateName && <p className="text-sm text-bijou-goldlight">Choisis ta porte : sans elle, tes scans ne sont rattachés à aucun point de contrôle.</p>}
       <Camera onCode={check} />
       <form className="w-full max-w-md flex gap-2" onSubmit={e => { e.preventDefault(); check(manual) }}>
         <input className={input} placeholder="Code ou lien du billet" value={manual} onChange={e => setManual(e.target.value)} />

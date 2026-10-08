@@ -88,7 +88,12 @@ service cloud.firestore {
     }
     match /scans/{id} {
       allow read: if isAdmin();
-      allow create: if isStaff() && request.resource.data.by == request.auth.uid;
+      allow create: if isStaff() && request.resource.data.by == request.auth.uid
+        && request.resource.data.at == request.time
+        && request.resource.data.result in ['ok','used','bad','unknown']
+        && request.resource.data.ticketId is string
+        && request.resource.data.ticketId.size() <= 200
+        && request.resource.data.keys().hasOnly(['ticketId','result','by','at','checkpoint','checkpointId']);
       allow update, delete: if false;
     }
     match /auditLogs/{id} {

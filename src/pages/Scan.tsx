@@ -121,10 +121,11 @@ export default function Scan() {
         if (t.status !== 'valid') return { kind: 'bad', t }
         if (t.validUntil && new Date(t.validUntil).getTime() < Date.now()) return { kind: 'bad', t: { ...t, status: 'expired' } }
         tx.update(ref, { status: 'used', usedAt: serverTimestamp(), usedBy: user.uid })
+        tx.set(doc(collection(db, 'scans')), { ticketId: token, result: 'ok', by: user.uid, at: serverTimestamp(), ...(gateName ? { checkpoint: gateName, checkpointId: gate } : {}) })
         return { kind: 'ok', t }
       })
       setRes(r)
-      addDoc(collection(db, 'scans'), { ticketId: token, result: r.kind, by: user.uid, at: serverTimestamp(), ...(gateName ? { checkpoint: gateName, checkpointId: gate } : {}) }).catch(() => {})
+      if (r.kind !== 'ok') addDoc(collection(db, 'scans'), { ticketId: token, result: r.kind, by: user.uid, at: serverTimestamp(), ...(gateName ? { checkpoint: gateName, checkpointId: gate } : {}) }).catch(() => {})
     } catch {
       setRes({ kind: 'error' })
     }

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } fr
 import { Link } from 'react-router-dom'
 import { AdminPaymentSettings } from '../components/AdminPaymentSettings'
 import { AdminRequests } from '../components/AdminRequests'
+import { AdminAgents } from '../components/AdminAgents'
 import { LoginForm } from '../components/LoginForm'
 import { CopyUid } from '../components/CopyUid'
 import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore'
@@ -120,6 +121,7 @@ function Dashboard() {
 
       <AdminPaymentSettings />
       <AdminRequests />
+      <AdminAgents />
 
       <form onSubmit={createEvent} className={card}>
         <h2 className="text-bijou-goldlight">Nouvel événement</h2>

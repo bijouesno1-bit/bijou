@@ -28,7 +28,7 @@ service cloud.firestore {
         && d.phone is string && d.phone.size() >= 6 && d.phone.size() <= 20
         && (!('email' in d) || (d.email is string && d.email.size() <= 120))
         && (!('comment' in d) || (d.comment is string && d.comment.size() <= 300))
-        && d.paymentMethod in ['cash','virement','airtel','moov','autre']
+        && d.paymentMethod in pay.get('methods', ['cash','virement','airtel','moov','autre'])
         && d.quantity is int && d.quantity >= 1 && d.quantity <= 10
         && tt.active == true
         && d.eventId == tt.eventId

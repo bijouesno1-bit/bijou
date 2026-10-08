@@ -28,6 +28,18 @@ function ReserveForm({ eventId, tt, left, ready, onClose }: { eventId: string; t
   const [email, setEmail] = useState('')
   const [qty, setQty] = useState(1)
   const [pay, setPay] = useState('cash')
+  const [allowed, setAllowed] = useState<string[]>(Object.keys(PAY_LABEL))
+  useEffect(() => {
+    getDoc(doc(db, 'settings', 'payment'))
+      .then(s => {
+        const m = (s.data() as { methods?: string[] } | undefined)?.methods
+        if (Array.isArray(m)) {
+          setAllowed(m)
+          setPay(p => (m.includes(p) ? p : (m[0] ?? '')))
+        }
+      })
+      .catch(() => { /* ignoré */ })
+  }, [])
   const [comment, setComment] = useState('')
   const [hp, setHp] = useState('')
   const [busy, setBusy] = useState(false)
@@ -76,7 +88,9 @@ function ReserveForm({ eventId, tt, left, ready, onClose }: { eventId: string; t
           {Array.from({ length: max }, (_, i) => i + 1).map(n => <option key={n} value={n}>{n} billet{n > 1 ? 's' : ''}</option>)}
         </select>
         <select className={input} value={pay} onChange={e => setPay(e.target.value)}>
-          {Object.entries(PAY_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+          {allowed.filter(k => k in PAY_LABEL).length === 0
+            ? <option value="">Aucun moyen de paiement disponible</option>
+            : allowed.filter(k => k in PAY_LABEL).map(k => <option key={k} value={k}>{PAY_LABEL[k]}</option>)}
         </select>
       </div>
       <textarea className={input} rows={2} placeholder="Commentaire (facultatif)" value={comment} onChange={e => setComment(e.target.value)} maxLength={300} />

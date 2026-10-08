@@ -8,6 +8,26 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
         && me().role == 'admin' && me().active == true;
     }
+    function validRequest() {
+      let d = request.resource.data;
+      let tt = get(/databases/$(database)/documents/ticketTypes/$(d.ticketTypeId)).data;
+      return d.keys().hasOnly(['eventId','ticketTypeId','ticketName','unitPrice','quantity','total','customerName','phone','email','paymentMethod','comment','status','createdAt'])
+        && d.keys().hasAll(['eventId','ticketTypeId','ticketName','unitPrice','quantity','total','customerName','phone','paymentMethod','status','createdAt'])
+        && d.status == 'pending'
+        && d.createdAt == request.time
+        && d.customerName is string && d.customerName.size() >= 2 && d.customerName.size() <= 80
+        && d.phone is string && d.phone.size() >= 6 && d.phone.size() <= 20
+        && (!('email' in d) || (d.email is string && d.email.size() <= 120))
+        && (!('comment' in d) || (d.comment is string && d.comment.size() <= 300))
+        && d.paymentMethod in ['cash','virement','airtel','moov','autre']
+        && d.quantity is int && d.quantity >= 1 && d.quantity <= 10
+        && tt.active == true
+        && d.eventId == tt.eventId
+        && get(/databases/$(database)/documents/events/$(tt.eventId)).data.status == 'published'
+        && d.unitPrice == tt.price
+        && d.total == tt.price * d.quantity
+        && d.quantity <= tt.quantity - tt.sold - tt.get('reserved', 0);
+    }
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
       allow write: if false;
@@ -19,6 +39,18 @@ service cloud.firestore {
     match /ticketTypes/{id} {
       allow read: if resource.data.active == true || isAdmin();
       allow write: if isAdmin();
+    }
+    match /requests/{id} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if validRequest();
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+    match /auditLogs/{id} {
+      allow read: if isAdmin();
+      allow create: if isAdmin() && request.resource.data.by == request.auth.uid;
+      allow update, delete: if false;
     }
   }
 }

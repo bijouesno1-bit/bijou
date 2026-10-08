@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, Route, Routes } from 'react-router-dom'
+import Demande from './pages/Demande'
 import Reserver from './pages/Reserver'
 import Admin from './pages/Admin'
 
@@ -34,6 +35,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/reserver" element={<Reserver />} />
+      <Route path="/demande/:id" element={<Demande />} />
       <Route path="/scan" element={<Page title="BIJOU Scan" />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="*" element={<Page title="Page introuvable" />} />

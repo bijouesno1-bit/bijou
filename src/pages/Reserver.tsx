@@ -1,15 +1,18 @@
-import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { collection, getDocs, query, where } from 'firebase/firestore'
+import { useEffect, useState, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { addDoc, collection, getDocs, query, serverTimestamp, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { PAY_LABEL } from '../lib/requests'
 
 type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string }
-type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number }
+type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number }
 
 const base = import.meta.env.BASE_URL
 const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory p-5 flex flex-col items-center gap-4'
 const card = 'w-full max-w-md rounded-xl border border-bijou-gold/40 bg-white/5 p-4 flex flex-col gap-3'
 const btn = 'rounded-xl border border-bijou-gold/60 px-4 py-2 font-medium active:scale-95 transition text-center'
+const btnGold = 'rounded-xl bg-bijou-gold text-bijou-ink px-4 py-2 font-semibold active:scale-95 transition'
+const input = 'w-full rounded-lg bg-black/40 border border-bijou-silver/40 px-3 py-2 text-bijou-ivory'
 
 function fmtDate(d: string) {
   if (!d) return ''
@@ -18,10 +21,80 @@ function fmtDate(d: string) {
     + ' à ' + x.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
+function ReserveForm({ eventId, tt, left, onClose }: { eventId: string; tt: Tt; left: number; onClose: () => void }) {
+  const nav = useNavigate()
+  const [name, setName] = useState('')
+  const [phone, setPhone] = useState('')
+  const [email, setEmail] = useState('')
+  const [qty, setQty] = useState(1)
+  const [pay, setPay] = useState('cash')
+  const [comment, setComment] = useState('')
+  const [hp, setHp] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const max = Math.max(1, Math.min(10, left))
+
+  async function submit(e: FormEvent) {
+    e.preventDefault()
+    setErr('')
+    if (hp) return
+    let last = 0
+    try { last = Number(localStorage.getItem('bijou_last_req') || 0) } catch { /* ignore */ }
+    if (Date.now() - last < 60000) { setErr('Patiente une minute avant une nouvelle demande.'); return }
+    setBusy(true)
+    try {
+      const ref = await addDoc(collection(db, 'requests'), {
+        eventId,
+        ticketTypeId: tt.id,
+        ticketName: tt.name,
+        unitPrice: tt.price,
+        quantity: qty,
+        total: tt.price * qty,
+        customerName: name.trim(),
+        phone: phone.trim(),
+        ...(email.trim() ? { email: email.trim() } : {}),
+        paymentMethod: pay,
+        ...(comment.trim() ? { comment: comment.trim() } : {}),
+        status: 'pending',
+        createdAt: serverTimestamp(),
+      })
+      try { localStorage.setItem('bijou_last_req', String(Date.now())) } catch { /* ignore */ }
+      nav(`/demande/${ref.id}`)
+    } catch {
+      setErr('Demande refusée : stock insuffisant ou informations invalides. Recharge la page et réessaie.')
+    }
+    setBusy(false)
+  }
+
+  return (
+    <form onSubmit={submit} className="flex flex-col gap-2 rounded-lg border border-bijou-gold/30 bg-black/20 p-3">
+      <input className={input} placeholder="Nom et prénom" value={name} onChange={e => setName(e.target.value)} required minLength={2} maxLength={80} autoComplete="name" />
+      <input className={input} type="tel" placeholder="Téléphone" value={phone} onChange={e => setPhone(e.target.value)} required minLength={6} maxLength={20} autoComplete="tel" />
+      <input className={input} type="email" placeholder="E-mail (facultatif)" value={email} onChange={e => setEmail(e.target.value)} maxLength={120} autoComplete="email" />
+      <div className="flex gap-2">
+        <select className={input} value={qty} onChange={e => setQty(Number(e.target.value))}>
+          {Array.from({ length: max }, (_, i) => i + 1).map(n => <option key={n} value={n}>{n} billet{n > 1 ? 's' : ''}</option>)}
+        </select>
+        <select className={input} value={pay} onChange={e => setPay(e.target.value)}>
+          {Object.entries(PAY_LABEL).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+        </select>
+      </div>
+      <textarea className={input} rows={2} placeholder="Commentaire (facultatif)" value={comment} onChange={e => setComment(e.target.value)} maxLength={300} />
+      <input value={hp} onChange={e => setHp(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />
+      <p className="text-sm">Total : <b className="text-bijou-goldlight">{(tt.price * qty).toLocaleString('fr-FR')} FCFA</b></p>
+      <p className="text-xs text-bijou-silver">Ta demande sera examinée par l'organisateur. Aucun billet n'est émis avant son accord et la confirmation du paiement.</p>
+      {err && <p className="text-bijou-alert text-sm">{err}</p>}
+      <button className={btnGold} disabled={busy}>{busy ? 'Envoi…' : 'Envoyer ma demande'}</button>
+      <button type="button" className={btn} onClick={onClose}>Annuler</button>
+    </form>
+  )
+}
+
 export default function Reserver() {
   const [events, setEvents] = useState<Ev[]>([])
   const [tickets, setTickets] = useState<Tt[]>([])
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
+  const [open, setOpen] = useState('')
 
   useEffect(() => {
     (async () => {
@@ -59,21 +132,26 @@ export default function Reserver() {
             <p className="text-sm text-bijou-silver">{ev.venue}, {ev.city}</p>
           </div>
           {ev.description && <p className="text-sm">{ev.description}</p>}
-          <div className="flex flex-col gap-2 border-t border-bijou-gold/20 pt-3">
+          <div className="flex flex-col gap-3 border-t border-bijou-gold/20 pt-3">
             {tickets.filter(t => t.eventId === ev.id).map(t => {
-              const left = t.quantity - t.sold
+              const left = t.quantity - t.sold - (t.reserved ?? 0)
               return (
-                <div key={t.id} className="flex justify-between items-center gap-2">
-                  <div>
-                    <p className="font-medium">{t.name}</p>
-                    <p className="text-xs text-bijou-silver">{left > 0 ? `${left} place${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}` : 'Complet'}</p>
+                <div key={t.id} className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center gap-2">
+                    <div>
+                      <p className="font-medium">{t.name}</p>
+                      <p className="text-xs text-bijou-silver">{left > 0 ? `${left} place${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}` : 'Complet'}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <p className="text-bijou-goldlight font-semibold whitespace-nowrap">{t.price.toLocaleString('fr-FR')} FCFA</p>
+                      {left > 0 && open !== t.id && <button className={btn + ' py-1 text-sm'} onClick={() => setOpen(t.id)}>Réserver</button>}
+                    </div>
                   </div>
-                  <p className="text-bijou-goldlight font-semibold whitespace-nowrap">{t.price.toLocaleString('fr-FR')} FCFA</p>
+                  {open === t.id && left > 0 && <ReserveForm eventId={ev.id} tt={t} left={left} onClose={() => setOpen('')} />}
                 </div>
               )
             })}
           </div>
-          <p className="text-xs text-bijou-silver text-center">Réservation en ligne bientôt disponible.</p>
         </div>
       ))}
 

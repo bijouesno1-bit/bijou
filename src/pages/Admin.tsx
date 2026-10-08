@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { AdminRequests } from '../components/AdminRequests'
 import { LoginForm } from '../components/LoginForm'
 import { CopyUid } from '../components/CopyUid'
 import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore'
@@ -115,6 +116,8 @@ function Dashboard() {
     <div className={bg}>
       <Header title="BIJOU Admin" />
       {err && <p className="text-bijou-alert text-sm max-w-md text-center">{err}</p>}
+
+      <AdminRequests />
 
       <form onSubmit={createEvent} className={card}>
         <h2 className="text-bijou-goldlight">Nouvel événement</h2>

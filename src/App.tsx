@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, Route, Routes } from 'react-router-dom'
+import Admin from './pages/Admin'
 
 const base = import.meta.env.BASE_URL
 const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory flex flex-col items-center justify-center gap-5 p-6'
@@ -33,7 +34,7 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/reserver" element={<Page title="Réservation" />} />
       <Route path="/scan" element={<Page title="BIJOU Scan" />} />
-      <Route path="/admin" element={<Page title="BIJOU Admin" />} />
+      <Route path="/admin" element={<Admin />} />
       <Route path="*" element={<Page title="Page introuvable" />} />
     </Routes>
   )

@@ -4,6 +4,7 @@ export const STATUS_LABEL: Record<string, string> = {
   refused: 'Refusée',
   info_needed: 'Informations demandées',
   paid: 'Paiement confirmé, billets émis',
+  expired: 'Réservation expirée',
 }
 export const PAY_LABEL: Record<string, string> = {
   cash: 'Espèces',

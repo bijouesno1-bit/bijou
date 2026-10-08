@@ -34,6 +34,7 @@ export function PayPanel({ r, onDone }: { r: R; onDone: () => void }) {
         const es = await tx.get(eRef)
         if (!rs.exists() || !ts.exists() || !es.exists()) throw new Error('Données introuvables.')
         const cur = rs.data() as { status: string; paymentStatus?: string; quantity: number; unitPrice: number; customerName: string }
+        if (cur.status === 'expired') throw new Error('Réservation expirée : ré-accepte la demande (le stock sera revérifié) avant de confirmer le paiement.')
         if (cur.status !== 'approved') throw new Error('La demande doit être approuvée.')
         if (cur.paymentStatus === 'confirmed') throw new Error('Billets déjà émis.')
         const t = ts.data() as { sold: number; reserved?: number; persons?: number; zone?: string; validUntil?: string | null; kind?: string }

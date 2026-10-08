@@ -20,6 +20,7 @@ const MESSAGE: Record<string, string> = {
   approved: "Ta demande est approuvée. Effectue le paiement en suivant les instructions ci-dessous, puis attends la confirmation de l'organisateur : tes billets apparaîtront sur cette page.",
   refused: "Ta demande n'a pas été retenue.",
   info_needed: "L'organisateur a besoin d'informations supplémentaires.",
+  expired: "Le délai pour payer est dépassé : ta réservation a expiré et les places ont été libérées. Refais une demande si des places sont encore disponibles.",
 }
 
 export default function Demande() {

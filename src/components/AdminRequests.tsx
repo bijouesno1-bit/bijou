@@ -4,6 +4,7 @@ import { PayPanel } from './PayPanel'
 import { db } from '../lib/firebase'
 import { useAuth } from '../lib/auth'
 import { PAY_LABEL, STATUS_LABEL, refOf } from '../lib/requests'
+import { sweepExpired } from '../lib/expiry'
 
 type Req = {
   id: string; eventId: string; ticketTypeId: string; ticketName: string; unitPrice: number; quantity: number; total: number
@@ -21,9 +22,10 @@ const COLOR: Record<string, string> = {
   approved: 'text-bijou-ok',
   refused: 'text-bijou-alert',
   info_needed: 'text-bijou-silver',
+  expired: 'text-bijou-silver',
 }
 const TABS: [string, string][] = [
-  ['pending', 'En attente'], ['info_needed', 'Infos'], ['approved', 'Approuvées'], ['refused', 'Refusées'], ['all', 'Toutes'],
+  ['pending', 'En attente'], ['info_needed', 'Infos'], ['approved', 'Approuvées'], ['refused', 'Refusées'], ['expired', 'Expirées'], ['all', 'Toutes'],
 ]
 
 export function AdminRequests() {
@@ -37,7 +39,10 @@ export function AdminRequests() {
 
   const load = useCallback(async () => {
     try {
-      const s = await getDocs(query(collection(db, 'requests'), orderBy('createdAt', 'desc')))
+      let s = await getDocs(query(collection(db, 'requests'), orderBy('createdAt', 'desc')))
+      if ((await sweepExpired(s.docs)) > 0) {
+        s = await getDocs(query(collection(db, 'requests'), orderBy('createdAt', 'desc')))
+      }
       setReqs(s.docs.map(d => ({ id: d.id, ...(d.data() as Omit<Req, 'id'>) })))
       setErr('')
     } catch {
@@ -62,7 +67,7 @@ export function AdminRequests() {
         const cur = rs.data() as Req
         if (cur.status === 'refused') throw new Error('Cette demande est déjà refusée.')
         if ((cur as { paymentStatus?: string }).paymentStatus === 'confirmed') throw new Error('Billets déjà émis : modification impossible.')
-        const t = ts.data() as { quantity: number; sold: number; reserved?: number }
+        const t = ts.data() as { quantity: number; sold: number; reserved?: number; holdMinutes?: number }
         let reserved = t.reserved ?? 0
         if (status === 'approved' && cur.status !== 'approved') {
           if (t.quantity - t.sold - reserved < cur.quantity) throw new Error('Stock insuffisant pour accepter cette demande.')
@@ -71,7 +76,11 @@ export function AdminRequests() {
           reserved = Math.max(0, reserved - cur.quantity)
         }
         tx.update(tRef, { reserved })
-        tx.update(rRef, { status, adminNote: note, decidedBy: user?.uid ?? '', decidedAt: serverTimestamp() })
+        const free = ((cur as { total?: number }).total ?? 1) === 0
+        const hold = status === 'approved' && cur.status !== 'approved' && !free
+          ? { holdUntil: new Date(Date.now() + (t.holdMinutes ?? 60) * 60000) }
+          : {}
+        tx.update(rRef, { status, adminNote: note, decidedBy: user?.uid ?? '', decidedAt: serverTimestamp(), ...hold })
         tx.set(doc(collection(db, 'auditLogs')), { requestId: r.id, action: status, note, by: user?.uid ?? '', at: serverTimestamp() })
       })
       await load()

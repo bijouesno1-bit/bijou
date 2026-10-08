@@ -49,6 +49,11 @@ function TicketForm({ eventId, onDone }: { eventId: string; onDone: () => void }
   const [name, setName] = useState('')
   const [price, setPrice] = useState('')
   const [qty, setQty] = useState('')
+  const [kind, setKind] = useState('classic')
+  const [persons, setPersons] = useState('2')
+  const [zone, setZone] = useState('')
+  const [validUntil, setValidUntil] = useState('')
+  const [holdMin, setHoldMin] = useState('60')
 
   async function submit(e: FormEvent) {
     e.preventDefault()
@@ -56,8 +61,11 @@ function TicketForm({ eventId, onDone }: { eventId: string; onDone: () => void }
       await addDoc(collection(db, 'ticketTypes'), {
         eventId, name: name.trim(), price: Number(price), quantity: Number(qty),
         sold: 0, active: true, createdAt: serverTimestamp(),
+        kind, persons: kind === 'group' ? Math.min(50, Math.max(2, Number(persons) || 2)) : 1,
+        zone: zone.trim().slice(0, 60), validUntil: validUntil || null,
+        holdMinutes: Math.min(10080, Math.max(5, Number(holdMin) || 60)),
       })
-      setName(''); setPrice(''); setQty('')
+      setName(''); setPrice(''); setQty(''); setZone(''); setValidUntil('')
       onDone()
     } catch {
       window.alert('Création refusée : vérifie ton accès administrateur.')
@@ -71,6 +79,22 @@ function TicketForm({ eventId, onDone }: { eventId: string; onDone: () => void }
         <input className={input} type="number" min="0" placeholder="Prix FCFA" value={price} onChange={e => setPrice(e.target.value)} required />
         <input className={input} type="number" min="1" placeholder="Billets" value={qty} onChange={e => setQty(e.target.value)} required />
       </div>
+      <select className={input} value={kind} onChange={e => setKind(e.target.value)}>
+        <option value="classic">Classique</option>
+        <option value="individual">Individuel</option>
+        <option value="vip">VIP</option>
+        <option value="premium">Premium</option>
+        <option value="group">Groupe (plusieurs personnes)</option>
+        <option value="invitation">Invitation (gratuit : prix 0)</option>
+      </select>
+      {kind === 'group' && <input className={input} type="number" min="2" max="50" placeholder="Personnes par billet" value={persons} onChange={e => setPersons(e.target.value)} />}
+      <input className={input} placeholder="Zone / rang / table (facultatif)" value={zone} onChange={e => setZone(e.target.value)} />
+      <label className="text-xs text-bijou-silver">Valable jusqu'au (facultatif)
+        <input className={input} type="datetime-local" value={validUntil} onChange={e => setValidUntil(e.target.value)} />
+      </label>
+      <label className="text-xs text-bijou-silver">Blocage d'une demande en attente (minutes)
+        <input className={input} type="number" min="5" max="10080" value={holdMin} onChange={e => setHoldMin(e.target.value)} />
+      </label>
       <button className={btn}>+ Ajouter la catégorie</button>
     </form>
   )

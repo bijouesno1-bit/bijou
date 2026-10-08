@@ -7,7 +7,7 @@ import { refOf } from '../lib/requests'
 
 type Tk = {
   requestId: string; ticketName: string; eventTitle: string; eventDate: string
-  venue: string; city: string; holderName: string; seq: number; count: number; status: string
+  venue: string; city: string; holderName: string; seq: number; count: number; status: string; persons?: number; zone?: string; validUntil?: string | null
 }
 
 const base = import.meta.env.BASE_URL
@@ -56,6 +56,8 @@ export default function Billet() {
           {qr && <img src={qr} alt="QR code du billet" className="w-56 h-56" />}
           <p className="font-mono text-sm">{refOf(t.requestId)}-{t.seq}</p>
           <p className="text-sm">{t.holderName} · billet {t.seq}/{t.count}</p>
+          {((t.persons ?? 1) > 1 || t.zone) && <p className="text-sm">{[(t.persons ?? 1) > 1 && `Valable pour ${t.persons} personnes`, t.zone].filter(Boolean).join(' · ')}</p>}
+          {t.validUntil && <p className="text-xs">Valable jusqu'au {new Date(t.validUntil).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</p>}
           {t.status !== 'valid' && (
             <p className="rounded-lg bg-bijou-alert text-white px-3 py-1 text-sm font-semibold">{STATE_LABEL[t.status] ?? 'Billet non valide'}</p>
           )}

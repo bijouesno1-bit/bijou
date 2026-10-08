@@ -7,7 +7,7 @@ import { useAuth } from '../lib/auth'
 import { LoginForm } from '../components/LoginForm'
 import { refOf } from '../lib/requests'
 
-type Tk = { requestId: string; ticketName: string; eventTitle: string; holderName: string; seq: number; count: number; status: string; usedAt?: { toDate: () => Date } }
+type Tk = { requestId: string; ticketName: string; eventTitle: string; holderName: string; seq: number; count: number; status: string; usedAt?: { toDate: () => Date }; persons?: number; zone?: string; validUntil?: string | null }
 type Res = { kind: 'ok' | 'used' | 'bad' | 'unknown' | 'error'; t?: Tk }
 type Det = { detect: (s: CanvasImageSource) => Promise<{ rawValue: string }[]> }
 
@@ -102,6 +102,7 @@ export default function Scan() {
         const t = s.data() as Tk
         if (t.status === 'used') return { kind: 'used', t }
         if (t.status !== 'valid') return { kind: 'bad', t }
+        if (t.validUntil && new Date(t.validUntil).getTime() < Date.now()) return { kind: 'bad', t: { ...t, status: 'expired' } }
         tx.update(ref, { status: 'used', usedAt: serverTimestamp(), usedBy: user.uid })
         return { kind: 'ok', t }
       })
@@ -133,13 +134,16 @@ export default function Scan() {
   if (res) {
     const t = res.t
     const style = res.kind === 'ok' ? 'bg-green-600' : res.kind === 'used' ? 'bg-orange-500' : 'bg-bijou-alert'
-    const title = { ok: 'VALIDE', used: 'DÉJÀ UTILISÉ', bad: 'BILLET ANNULÉ', unknown: 'BILLET INCONNU', error: 'ERREUR' }[res.kind]
+    const title = { ok: 'VALIDE', used: 'DÉJÀ UTILISÉ', bad: 'BILLET REFUSÉ', unknown: 'BILLET INCONNU', error: 'ERREUR' }[res.kind]
     return (
       <div className={`min-h-screen ${style} text-white p-6 flex flex-col items-center justify-center gap-4 text-center`}>
         <p className="text-4xl font-bold">{title}</p>
         {t && <>
           <p className="text-xl">{t.holderName}</p>
           <p>{t.eventTitle} · {t.ticketName}</p>
+          {(t.persons ?? 1) > 1 && <p className="text-2xl font-bold">{t.persons} personnes autorisées</p>}
+          {t.zone && <p>{t.zone}</p>}
+          {res.kind === 'bad' && <p>{t.status === 'expired' ? 'Billet expiré' : t.status === 'revoked' ? 'Billet révoqué' : 'Billet annulé ou non valide'}</p>}
           <p className="font-mono">{refOf(t.requestId)}-{t.seq} ({t.seq}/{t.count})</p>
           {res.kind === 'used' && t.usedAt && <p>Entré à {t.usedAt.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>}
         </>}

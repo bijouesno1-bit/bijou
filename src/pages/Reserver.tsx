@@ -5,7 +5,7 @@ import { db } from '../lib/firebase'
 import { PAY_LABEL } from '../lib/requests'
 
 type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string }
-type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number }
+type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; kind?: string; persons?: number; zone?: string; validUntil?: string | null }
 
 const base = import.meta.env.BASE_URL
 const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory p-5 flex flex-col items-center gap-4'
@@ -148,6 +148,7 @@ export default function Reserver() {
                   <div className="flex justify-between items-center gap-2">
                     <div>
                       <p className="font-medium">{t.name}</p>
+                      {((t.persons ?? 1) > 1 || t.zone || t.price === 0) && <p className="text-xs text-bijou-goldlight">{[(t.persons ?? 1) > 1 && `Valable pour ${t.persons} personnes`, t.zone, t.price === 0 && 'Gratuit sur validation'].filter(Boolean).join(' · ')}</p>}
                       <p className="text-xs text-bijou-silver">{left > 0 ? `${left} place${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}` : 'Complet'}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1">

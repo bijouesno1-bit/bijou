@@ -20,7 +20,7 @@ export function PayPanel({ r, onDone }: { r: R; onDone: () => void }) {
   const [err, setErr] = useState('')
 
   async function confirmPayment() {
-    const ok = window.confirm(`Confirmer la réception de ${r.total.toLocaleString('fr-FR')} FCFA et émettre ${r.quantity} billet(s) ?`)
+    const ok = window.confirm(r.total === 0 ? `Billet gratuit : émettre ${r.quantity} billet(s) ?` : `Confirmer la réception de ${r.total.toLocaleString('fr-FR')} FCFA et émettre ${r.quantity} billet(s) ?`)
     if (!ok) return
     setBusy(true)
     setErr('')
@@ -36,7 +36,7 @@ export function PayPanel({ r, onDone }: { r: R; onDone: () => void }) {
         const cur = rs.data() as { status: string; paymentStatus?: string; quantity: number; unitPrice: number; customerName: string }
         if (cur.status !== 'approved') throw new Error('La demande doit être approuvée.')
         if (cur.paymentStatus === 'confirmed') throw new Error('Billets déjà émis.')
-        const t = ts.data() as { sold: number; reserved?: number }
+        const t = ts.data() as { sold: number; reserved?: number; persons?: number; zone?: string; validUntil?: string | null; kind?: string }
         const ev = es.data() as { title: string; date: string; venue: string; city: string }
         const tokens: string[] = []
         for (let i = 1; i <= cur.quantity; i++) {
@@ -47,6 +47,7 @@ export function PayPanel({ r, onDone }: { r: R; onDone: () => void }) {
             eventTitle: ev.title, eventDate: ev.date, venue: ev.venue, city: ev.city,
             ticketName: (rs.data() as { ticketName: string }).ticketName,
             holderName: cur.customerName, seq: i, count: cur.quantity, price: cur.unitPrice,
+            persons: t.persons ?? 1, zone: t.zone ?? '', validUntil: t.validUntil ?? null, kind: t.kind ?? 'classic',
             status: 'valid', createdAt: serverTimestamp(),
           })
         }
@@ -77,10 +78,14 @@ export function PayPanel({ r, onDone }: { r: R; onDone: () => void }) {
 
   return (
     <div className="rounded-lg border border-bijou-gold/40 p-3 flex flex-col gap-2">
-      <p className="text-sm">Paiement attendu : <b>{r.total.toLocaleString('fr-FR')} FCFA</b></p>
-      <input className={input} placeholder="Référence de la transaction (facultatif)" value={txRef} onChange={e => setTxRef(e.target.value)} maxLength={80} />
+      {r.total === 0
+        ? <p className="text-sm">Billet gratuit : aucun paiement requis.</p>
+        : <>
+            <p className="text-sm">Paiement attendu : <b>{r.total.toLocaleString('fr-FR')} FCFA</b></p>
+            <input className={input} placeholder="Référence de la transaction (facultatif)" value={txRef} onChange={e => setTxRef(e.target.value)} maxLength={80} />
+          </>}
       {err && <p className="text-bijou-alert text-sm">{err}</p>}
-      <button className={btnGold} disabled={busy} onClick={confirmPayment}>{busy ? 'Émission…' : 'Paiement reçu : émettre les billets'}</button>
+      <button className={btnGold} disabled={busy} onClick={confirmPayment}>{busy ? 'Émission…' : r.total === 0 ? 'Émettre les billets gratuits' : 'Paiement reçu : émettre les billets'}</button>
     </div>
   )
 }

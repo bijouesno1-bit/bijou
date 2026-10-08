@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, Route, Routes } from 'react-router-dom'
+import Reserver from './pages/Reserver'
 import Admin from './pages/Admin'
 
 const base = import.meta.env.BASE_URL
@@ -32,7 +33,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<Home />} />
-      <Route path="/reserver" element={<Page title="Réservation" />} />
+      <Route path="/reserver" element={<Reserver />} />
       <Route path="/scan" element={<Page title="BIJOU Scan" />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="*" element={<Page title="Page introuvable" />} />

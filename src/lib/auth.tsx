@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth'
+import { onAuthStateChanged, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, type User } from 'firebase/auth'
 import { doc, getDoc } from 'firebase/firestore'
 import { auth, db } from './firebase'
 
@@ -11,6 +11,7 @@ type Ctx = {
   loading: boolean
   login: (email: string, pwd: string) => Promise<void>
   logout: () => Promise<void>
+  resetPassword: (email: string) => Promise<void>
 }
 
 const AuthCtx = createContext<Ctx>(null as unknown as Ctx)
@@ -38,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isAdmin = profile?.role === 'admin' && profile?.active === true
   const login = async (email: string, pwd: string) => { await signInWithEmailAndPassword(auth, email, pwd) }
   const logout = async () => { await signOut(auth) }
+  const resetPassword = async (email: string) => { await sendPasswordResetEmail(auth, email) }
 
-  return <AuthCtx.Provider value={{ user, profile, isAdmin, loading, login, logout }}>{children}</AuthCtx.Provider>
+  return <AuthCtx.Provider value={{ user, profile, isAdmin, loading, login, logout, resetPassword }}>{children}</AuthCtx.Provider>
 }

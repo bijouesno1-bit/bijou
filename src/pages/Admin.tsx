@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { LoginForm } from '../components/LoginForm'
+import { CopyUid } from '../components/CopyUid'
 import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../lib/auth'
@@ -23,42 +25,6 @@ function Header({ title }: { title: string }) {
   )
 }
 
-function Login() {
-  const { login } = useAuth()
-  const [email, setEmail] = useState('')
-  const [pwd, setPwd] = useState('')
-  const [err, setErr] = useState('')
-  const [busy, setBusy] = useState(false)
-
-  async function submit(e: FormEvent) {
-    e.preventDefault()
-    setErr('')
-    setBusy(true)
-    try {
-      await login(email.trim(), pwd)
-    } catch (x) {
-      const c = (x as { code?: string }).code ?? ''
-      setErr(c.includes('configuration-not-found') || c.includes('operation-not-allowed')
-        ? 'Connexion e-mail/mot de passe non activée dans Firebase.'
-        : 'E-mail ou mot de passe incorrect.')
-    }
-    setBusy(false)
-  }
-
-  return (
-    <div className={bg}>
-      <Header title="Espace organisateur" />
-      <form onSubmit={submit} className={card}>
-        <input className={input} type="email" placeholder="E-mail" autoComplete="username" value={email} onChange={e => setEmail(e.target.value)} required />
-        <input className={input} type="password" placeholder="Mot de passe" autoComplete="current-password" value={pwd} onChange={e => setPwd(e.target.value)} required />
-        {err && <p className="text-bijou-alert text-sm">{err}</p>}
-        <button className={btnGold} disabled={busy}>{busy ? 'Connexion…' : 'Se connecter'}</button>
-      </form>
-      <Link to="/" className={btn}>Retour à l'accueil</Link>
-    </div>
-  )
-}
-
 function NotAdmin() {
   const { user, logout } = useAuth()
   return (
@@ -69,7 +35,7 @@ function NotAdmin() {
           Ce compte n'est pas encore déclaré administrateur. Dans la console Firebase, ouvre Firestore, crée la collection <b>users</b>
           et un document dont l'ID est l'UID ci-dessous, avec les champs <b>role</b> (string) = admin et <b>active</b> (boolean) = true. Puis recharge cette page.
         </p>
-        <code className="break-all text-bijou-goldlight text-sm select-all">{user?.uid}</code>
+        <CopyUid uid={user?.uid ?? ""} />
         <button className={btn} onClick={logout}>Se déconnecter</button>
       </div>
     </div>
@@ -191,4 +157,14 @@ export default function Admin() {
   if (!user) return <Login />
   if (!isAdmin) return <NotAdmin />
   return <Dashboard />
+}
+
+function Login() {
+  return (
+    <div className={bg}>
+      <Header title="Espace organisateur" />
+      <LoginForm />
+      <Link to="/" className={btn}>Retour à l'accueil</Link>
+    </div>
+  )
 }

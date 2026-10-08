@@ -1,3 +1,4 @@
+import { stockInfo } from '../lib/stock'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, where } from 'firebase/firestore'
@@ -163,7 +164,7 @@ export default function Reserver() {
                     <div>
                       <p className="font-medium">{t.name}</p>
                       {((t.persons ?? 1) > 1 || t.zone || t.price === 0) && <p className="text-xs text-bijou-goldlight">{[(t.persons ?? 1) > 1 && `Valable pour ${t.persons} personnes`, t.zone, t.price === 0 && 'Gratuit sur validation'].filter(Boolean).join(' · ')}</p>}
-                      <p className="text-xs text-bijou-silver">{left > 0 ? `${left} place${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}` : 'Complet'}</p>
+                      <p className="text-xs text-bijou-silver">{left > 0 ? `${left} place${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}` : 'Complet'}{left > 0 && stockInfo(t).label && <span className="ml-2 font-semibold text-bijou-goldlight">{stockInfo(t).label}</span>}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <p className="text-bijou-goldlight font-semibold whitespace-nowrap">{t.price.toLocaleString('fr-FR')} FCFA</p>

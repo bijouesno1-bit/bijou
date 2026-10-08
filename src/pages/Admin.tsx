@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPaymentSettings } from '../components/AdminPaymentSettings'
+import { AdminDashboard } from '../components/AdminDashboard'
 import { AdminRequests } from '../components/AdminRequests'
 import { AdminAgents } from '../components/AdminAgents'
 import { AdminCheckpoints } from '../components/AdminCheckpoints'
@@ -146,6 +147,7 @@ function Dashboard() {
       <Header title="BIJOU Admin" />
       {err && <p className="text-bijou-alert text-sm max-w-md text-center">{err}</p>}
 
+      <AdminDashboard />
       <AdminPaymentSettings />
       <AdminRequests />
       <AdminAgents />

@@ -8,6 +8,11 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/users/$(request.auth.uid))
         && me().role == 'admin' && me().active == true;
     }
+    function isStaff() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && me().role in ['admin','agent'] && me().active == true;
+    }
     function validRequest() {
       let d = request.resource.data;
       let tt = get(/databases/$(database)/documents/ticketTypes/$(d.ticketTypeId)).data;
@@ -55,12 +60,21 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isAdmin();
       allow create: if isAdmin();
-      allow update: if isAdmin();
+      allow update: if isAdmin() || (isStaff()
+        && resource.data.status == 'valid'
+        && request.resource.data.status == 'used'
+        && request.resource.data.usedBy == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','usedAt','usedBy']));
       allow delete: if false;
     }
     match /settings/{id} {
       allow read: if true;
       allow write: if isAdmin();
+    }
+    match /scans/{id} {
+      allow read: if isAdmin();
+      allow create: if isStaff() && request.resource.data.by == request.auth.uid;
+      allow update, delete: if false;
     }
     match /auditLogs/{id} {
       allow read: if isAdmin();

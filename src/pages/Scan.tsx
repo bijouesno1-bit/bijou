@@ -1,0 +1,164 @@
+import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
+import { addDoc, collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore'
+import jsQR from 'jsqr'
+import { db } from '../lib/firebase'
+import { useAuth } from '../lib/auth'
+import { LoginForm } from '../components/LoginForm'
+import { refOf } from '../lib/requests'
+
+type Tk = { requestId: string; ticketName: string; eventTitle: string; holderName: string; seq: number; count: number; status: string; usedAt?: { toDate: () => Date } }
+type Res = { kind: 'ok' | 'used' | 'bad' | 'unknown' | 'error'; t?: Tk }
+type Det = { detect: (s: CanvasImageSource) => Promise<{ rawValue: string }[]> }
+
+const base = import.meta.env.BASE_URL
+const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory p-5 flex flex-col items-center gap-4'
+const btn = 'rounded-xl border border-bijou-gold/60 px-4 py-2 font-medium active:scale-95 transition text-center'
+const btnGold = 'rounded-xl bg-bijou-gold text-bijou-ink px-4 py-2 font-semibold active:scale-95 transition'
+const input = 'w-full rounded-lg bg-black/40 border border-bijou-silver/40 px-3 py-2 text-bijou-ivory'
+
+function extractToken(raw: string) {
+  let s = raw.trim()
+  if (s.startsWith('BIJOU:')) s = s.slice(6)
+  const i = s.indexOf('/billet/')
+  if (i >= 0) s = s.slice(i + 8)
+  return s.split(/[?#]/)[0].trim()
+}
+
+function Camera({ onCode }: { onCode: (s: string) => void }) {
+  const vref = useRef<HTMLVideoElement>(null)
+  const cb = useRef(onCode)
+  cb.current = onCode
+  const [err, setErr] = useState('')
+
+  useEffect(() => {
+    let stop = false
+    let raf = 0
+    let stream: MediaStream | null = null
+    const canvas = document.createElement('canvas')
+    const BD = (window as unknown as { BarcodeDetector?: new (o: { formats: string[] }) => Det }).BarcodeDetector
+    const det = BD ? new BD({ formats: ['qr_code'] }) : null
+
+    async function start() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+        const v = vref.current
+        if (!v || stop) { stream.getTracks().forEach(t => t.stop()); return }
+        v.srcObject = stream
+        await v.play()
+        const tick = async () => {
+          if (stop) return
+          if (v.readyState >= 2 && v.videoWidth) {
+            let code = ''
+            try {
+              if (det) {
+                const r = await det.detect(v)
+                code = r[0]?.rawValue ?? ''
+              } else {
+                canvas.width = v.videoWidth
+                canvas.height = v.videoHeight
+                const c = canvas.getContext('2d', { willReadFrequently: true })
+                if (c) {
+                  c.drawImage(v, 0, 0)
+                  const im = c.getImageData(0, 0, canvas.width, canvas.height)
+                  code = jsQR(im.data, im.width, im.height)?.data ?? ''
+                }
+              }
+            } catch { /* ignore */ }
+            if (code && !stop) { cb.current(code); return }
+          }
+          raf = requestAnimationFrame(tick)
+        }
+        tick()
+      } catch {
+        setErr("Caméra indisponible : autorise l'accès à la caméra, ou utilise la saisie manuelle.")
+      }
+    }
+    start()
+    return () => { stop = true; cancelAnimationFrame(raf); stream?.getTracks().forEach(t => t.stop()) }
+  }, [])
+
+  return err
+    ? <p className="text-bijou-alert text-sm text-center max-w-md">{err}</p>
+    : <video ref={vref} playsInline muted className="w-full max-w-md rounded-xl border border-bijou-gold/40" />
+}
+
+export default function Scan() {
+  const { user, isStaff, loading, logout } = useAuth()
+  const [res, setRes] = useState<Res | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [manual, setManual] = useState('')
+
+  async function check(raw: string) {
+    const token = extractToken(raw)
+    if (!user || busy) return
+    if (!token || token.length > 200 || token.includes('/')) { setRes({ kind: 'unknown' }); return }
+    setBusy(true)
+    try {
+      const ref = doc(db, 'tickets', token)
+      const r = await runTransaction(db, async (tx): Promise<Res> => {
+        const s = await tx.get(ref)
+        if (!s.exists()) return { kind: 'unknown' }
+        const t = s.data() as Tk
+        if (t.status === 'used') return { kind: 'used', t }
+        if (t.status !== 'valid') return { kind: 'bad', t }
+        tx.update(ref, { status: 'used', usedAt: serverTimestamp(), usedBy: user.uid })
+        return { kind: 'ok', t }
+      })
+      setRes(r)
+      addDoc(collection(db, 'scans'), { ticketId: token, result: r.kind, by: user.uid, at: serverTimestamp() }).catch(() => {})
+    } catch {
+      setRes({ kind: 'error' })
+    }
+    setBusy(false)
+  }
+
+  if (loading) return <div className={bg}>Chargement…</div>
+  if (!user) return (
+    <div className={bg}>
+      <img src={`${base}brand/logo-sombre.svg`} alt="BIJOU" className="w-48" />
+      <h1 className="text-xl text-bijou-goldlight">BIJOU Scan</h1>
+      <LoginForm />
+      <Link to="/" className={btn}>Retour à l'accueil</Link>
+    </div>
+  )
+  if (!isStaff) return (
+    <div className={bg}>
+      <h1 className="text-xl text-bijou-goldlight">Accès non autorisé</h1>
+      <p className="text-sm text-bijou-silver text-center max-w-md">Ce compte n'est ni administrateur ni agent de contrôle.</p>
+      <button className={btn} onClick={logout}>Se déconnecter</button>
+    </div>
+  )
+
+  if (res) {
+    const t = res.t
+    const style = res.kind === 'ok' ? 'bg-green-600' : res.kind === 'used' ? 'bg-orange-500' : 'bg-bijou-alert'
+    const title = { ok: 'VALIDE', used: 'DÉJÀ UTILISÉ', bad: 'BILLET ANNULÉ', unknown: 'BILLET INCONNU', error: 'ERREUR' }[res.kind]
+    return (
+      <div className={`min-h-screen ${style} text-white p-6 flex flex-col items-center justify-center gap-4 text-center`}>
+        <p className="text-4xl font-bold">{title}</p>
+        {t && <>
+          <p className="text-xl">{t.holderName}</p>
+          <p>{t.eventTitle} · {t.ticketName}</p>
+          <p className="font-mono">{refOf(t.requestId)}-{t.seq} ({t.seq}/{t.count})</p>
+          {res.kind === 'used' && t.usedAt && <p>Entré à {t.usedAt.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>}
+        </>}
+        {res.kind === 'error' && <p>Vérifie la connexion et ton rôle, puis réessaie.</p>}
+        <button className="rounded-xl bg-white text-black px-6 py-3 font-semibold" onClick={() => { setRes(null); setManual('') }}>Scanner le suivant</button>
+      </div>
+    )
+  }
+
+  return (
+    <div className={bg}>
+      <h1 className="text-xl text-bijou-goldlight">BIJOU Scan</h1>
+      <Camera onCode={check} />
+      <form className="w-full max-w-md flex gap-2" onSubmit={e => { e.preventDefault(); check(manual) }}>
+        <input className={input} placeholder="Code ou lien du billet" value={manual} onChange={e => setManual(e.target.value)} />
+        <button className={btnGold} disabled={busy}>OK</button>
+      </form>
+      <button className={btn} onClick={logout}>Se déconnecter</button>
+      <Link to="/" className={btn}>Retour à l'accueil</Link>
+    </div>
+  )
+}

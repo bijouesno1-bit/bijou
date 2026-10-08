@@ -8,6 +8,7 @@ type Ctx = {
   user: User | null
   profile: Profile
   isAdmin: boolean
+  isStaff: boolean
   loading: boolean
   login: (email: string, pwd: string) => Promise<void>
   logout: () => Promise<void>
@@ -37,9 +38,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }), [])
 
   const isAdmin = profile?.role === 'admin' && profile?.active === true
+  const isStaff = (profile?.role === 'admin' || profile?.role === 'agent') && profile?.active === true
   const login = async (email: string, pwd: string) => { await signInWithEmailAndPassword(auth, email, pwd) }
   const logout = async () => { await signOut(auth) }
   const resetPassword = async (email: string) => { await sendPasswordResetEmail(auth, email) }
 
-  return <AuthCtx.Provider value={{ user, profile, isAdmin, loading, login, logout, resetPassword }}>{children}</AuthCtx.Provider>
+  return <AuthCtx.Provider value={{ user, profile, isAdmin, isStaff, loading, login, logout, resetPassword }}>{children}</AuthCtx.Provider>
 }

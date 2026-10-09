@@ -5,6 +5,7 @@ import Billet from './pages/Billet'
 import Demande from './pages/Demande'
 import Reserver from './pages/Reserver'
 import Admin from './pages/Admin'
+import Lot from './pages/Lot'
 
 const base = import.meta.env.BASE_URL
 const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory flex flex-col items-center justify-center gap-5 p-6'
@@ -41,6 +42,7 @@ export default function App() {
       <Route path="/billet/:token" element={<Billet />} />
       <Route path="/scan" element={<Scan />} />
       <Route path="/admin" element={<Admin />} />
+      <Route path="/lot/:id" element={<Lot />} />
       <Route path="*" element={<Page title="Page introuvable" />} />
     </Routes>
   )

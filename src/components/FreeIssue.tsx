@@ -25,6 +25,7 @@ export function FreeIssue({ tt, onDone }: Props) {
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [tokens, setTokens] = useState<string[]>([])
+  const [batchId, setBatchId] = useState('')
 
   async function issue() {
     const count = mode === 'lot' ? Math.min(50, Math.max(1, Math.floor(Number(qty) || 1))) : 1
@@ -36,6 +37,7 @@ export function FreeIssue({ tt, onDone }: Props) {
     setTokens([])
     try {
       const bRef = doc(collection(db, 'batches'))
+      setBatchId(bRef.id)
       const toks: string[] = []
       await runTransaction(db, async tx => {
         const tRef = doc(db, 'ticketTypes', tt.id)
@@ -87,6 +89,7 @@ export function FreeIssue({ tt, onDone }: Props) {
       {tokens.length > 0 && (
         <div className="flex flex-col gap-1 text-sm">
           <p className="text-bijou-ok font-semibold">{tokens.length} billet(s) émis</p>
+          <Link to={"/lot/" + batchId} className={btn}>Imprimer le lot</Link>
           {tokens.map((tok, i) => (
             <p key={tok} className="flex gap-3">
               <Link to={`/billet/${tok}`} className="underline text-bijou-goldlight">Billet {i + 1}</Link>

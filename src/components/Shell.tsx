@@ -4,6 +4,7 @@ import { useAuth } from '../lib/auth'
 import { InstallBanner } from './InstallBanner'
 import { Avatar } from './Avatar'
 import { ProfilePanel } from './ProfilePanel'
+import { SearchBar } from './SearchBar'
 
 const base = import.meta.env.BASE_URL
 
@@ -80,6 +81,7 @@ export function Shell({ children }: { children: ReactNode }) {
           {adminMode && <span className="rounded bg-bijou-navy text-bijou-ivory text-[10px] px-1.5 py-0.5 tracking-widest">ADMIN</span>}
         </Link>
         <div className="flex items-center gap-1">
+          <SearchBar />
           <button aria-label="Connexion" onClick={() => setLogin(v => !v)} className="relative p-2 text-bijou-ink">
             {photo && <Avatar url={photo} size={32} />}
             <svg viewBox="0 0 24 24" className={photo ? 'hidden' : 'h-7 w-7'} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">

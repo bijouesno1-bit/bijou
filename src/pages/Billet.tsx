@@ -4,6 +4,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import * as QRCode from 'qrcode'
 import { db } from '../lib/firebase'
 import { refOf } from '../lib/requests'
+import { Venues } from '../components/Venues'
 import { KIND_CARD, KIND_LABEL, KIND_PLAIN } from '../lib/kinds'
 
 type Tk = {
@@ -70,6 +71,7 @@ export default function Billet() {
         </div>
       )}
       {state === 'ok' && <button className={btn} onClick={() => window.print()}>Imprimer / Enregistrer en PDF</button>}
+      <div className="print:hidden w-full max-w-sm"><Venues /></div>
       <Link to="/" className={btn}>Retour à l'accueil</Link>
     </div>
   )

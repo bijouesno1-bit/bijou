@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { PAY_LABEL } from '../lib/requests'
+import { Venues } from '../components/Venues'
 
 type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string }
 type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; kind?: string; persons?: number; zone?: string; validUntil?: string | null }
@@ -179,6 +180,7 @@ export default function Reserver() {
         </div>
       ))}
 
+      <Venues />
       <Link to="/" className={btn}>Retour à l'accueil</Link>
     </div>
   )

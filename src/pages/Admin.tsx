@@ -12,6 +12,7 @@ import { db } from '../lib/firebase'
 import { useAuth } from '../lib/auth'
 import { StockLine } from '../components/StockLine'
 import { FreeIssue } from '../components/FreeIssue'
+import { AdminVenues } from '../components/AdminVenues'
 import { EventStats } from '../components/EventStats'
 
 type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; status: string }
@@ -151,6 +152,7 @@ function Dashboard() {
       <AdminDashboard />
       <AdminPaymentSettings />
       <AdminRequests />
+      <AdminVenues />
       <AdminAgents />
       <AdminCheckpoints />
 

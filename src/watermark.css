@@ -5,7 +5,7 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background: url("./fond-stade.jpg") center / cover no-repeat;
-  opacity: 0.55;
+  opacity: 0.35;
   filter: blur(1.5px) saturate(0.9);
 }
 @media print { body::before { display: none; } }

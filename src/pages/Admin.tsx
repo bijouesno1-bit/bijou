@@ -1,3 +1,6 @@
+import { AdminEv, AdminModes } from '../components/AdminEv'
+import type { Mode } from '../components/ViewModes'
+import { pad } from '../lib/eventNum'
 import { bg, card, btn, btnGold, input } from '../lib/ui'
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
@@ -22,7 +25,7 @@ import { DemoPack, deleteEventDeep } from '../components/DemoPack'
 import { nextEventNum } from '../lib/eventNum'
 import { PosterInput } from '../components/PosterInput'
 
-type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; status: string; maxCapacity?: number | null; poster?: string }
+type Ev = { num?: number; id: string; title: string; date: string; venue: string; city: string; description: string; status: string; maxCapacity?: number | null; poster?: string }
 type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; active: boolean; kind?: string; persons?: number; zone?: string; validUntil?: string | null }
 
 const base = import.meta.env.BASE_URL
@@ -192,11 +195,11 @@ function Dashboard() {
         <button className={btnGold}>Créer (brouillon)</button>
       </form>
 
-      {events.map(ev => (
-        <div key={ev.id} className={card}>
+      <AdminModes>{(vm: Mode) => events.map(ev => (
+        <AdminEv key={ev.id} ev={ev} vm={vm}>
           <div className="flex justify-between gap-2">
             <div>
-              <p className="font-semibold">{ev.title}</p>
+              <p className="font-semibold">{ev.num ? <span className="mr-2 text-xs text-bijou-goldlight">N° {pad(ev.num)}</span> : null}{ev.title}</p>
               <p className="text-sm text-bijou-silver">{ev.venue}, {ev.city} · {ev.date ? new Date(ev.date).toLocaleString('fr-FR') : ''}</p>
             </div>
             <span className={ev.status === 'published' ? 'text-bijou-ok text-sm' : 'text-bijou-silver text-sm'}>
@@ -216,8 +219,8 @@ function Dashboard() {
           <TicketForm eventId={ev.id} onDone={load} />
           <button className={btn} onClick={() => toggle(ev)}>{ev.status === 'published' ? 'Dépublier' : 'Publier'}</button>
           <button className={btn + ' text-bijou-alert'} onClick={async () => { if (!window.confirm('Supprimer « ' + ev.title + ' » et ses billets ?')) return; try { await deleteEventDeep(ev.id); setEvents(x => x.filter(e => e.id !== ev.id)); setTickets(x => x.filter(t => t.eventId !== ev.id)) } catch { window.alert('Suppression refusée.') } }}>Supprimer</button>
-        </div>
-      ))}
+        </AdminEv>
+      ))}</AdminModes>
 
       </div>
       <button className={btn} onClick={logout}>Se déconnecter</button>

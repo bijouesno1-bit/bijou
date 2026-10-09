@@ -6,6 +6,7 @@ import { db } from '../lib/firebase'
 import { useAuth } from '../lib/auth'
 import { LoginForm } from '../components/LoginForm'
 import { refOf } from '../lib/requests'
+import { ScanGuide } from '../components/ScanGuide'
 import { KIND_LABEL, KIND_PLAIN } from '../lib/kinds'
 
 type Tk = { requestId: string; ticketName: string; eventTitle: string; holderName: string; seq: number; count: number; status: string; usedAt?: { toDate: () => Date }; persons?: number; zone?: string; validUntil?: string | null; kind?: string }
@@ -182,6 +183,7 @@ export default function Scan() {
           <p className="text-xl">Le serveur n'a pas répondu : ce billet n'est ni validé ni refusé.</p>
           <p>Ne fais pas entrer sans vérification. Contrôle la connexion et ton rôle, puis scanne à nouveau.</p>
         </>}
+        {res.kind !== 'ok' && <ScanGuide />}
         <button className="rounded-xl bg-white text-black px-6 py-3 font-semibold" onClick={() => { setRes(null); setManual('') }}>Scanner le suivant</button>
       </div>
     )
@@ -202,6 +204,7 @@ export default function Scan() {
         <input className={input} placeholder="Code ou lien du billet" value={manual} onChange={e => setManual(e.target.value)} />
         <button className={btnGold} disabled={busy}>OK</button>
       </form>
+      <ScanGuide />
       <button className={btn} onClick={logout}>Se déconnecter</button>
       <Link to="/" className={btn}>Retour à l'accueil</Link>
     </div>

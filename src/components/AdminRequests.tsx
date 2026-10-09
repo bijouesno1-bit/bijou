@@ -25,6 +25,14 @@ const COLOR: Record<string, string> = {
   info_needed: 'text-bijou-silver',
   expired: 'text-bijou-silver',
 }
+const TONE: Record<string, string> = {
+  pending: 'border-bijou-gold text-bijou-goldlight',
+  info_needed: 'border-sky-400 text-sky-300',
+  approved: 'border-emerald-400 text-emerald-300',
+  refused: 'border-red-400 text-red-300',
+  expired: 'border-bijou-silver text-bijou-silver',
+  all: 'border-violet-400 text-violet-300',
+}
 const TABS: [string, string][] = [
   ['pending', 'En attente'], ['info_needed', 'Infos'], ['approved', 'Approuvées'], ['refused', 'Refusées'], ['expired', 'Expirées'], ['all', 'Toutes'],
 ]
@@ -112,10 +120,10 @@ export function AdminRequests() {
   return (
     <div className="w-full max-w-md flex flex-col gap-3">
       <h2 className="text-bijou-goldlight text-lg">Demandes de réservation</h2>
-      <div className="flex flex-wrap gap-2">
+      <div className="grid grid-cols-3 gap-2">
         {TABS.map(([k, label]) => (
-          <button key={k} onClick={() => setFilter(k)} className={(filter === k ? btnGold : btn) + ' !px-3 !py-1'}>
-            {label} ({count(k)})
+          <button key={k} onClick={() => setFilter(k)} className={'w-full h-16 flex flex-col items-center justify-center text-center leading-tight rounded-xl border-2 text-xs active:scale-95 transition ' + (filter === k ? 'bg-bijou-gold text-bijou-ink border-bijou-gold font-semibold' : (TONE[k] ?? '') + ' bg-black/20')}>
+            <span className="text-lg font-semibold">{count(k)}</span><span>{label}</span>
           </button>
         ))}
       </div>

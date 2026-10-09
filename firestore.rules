@@ -50,6 +50,11 @@ service cloud.firestore {
         && resource.data.role == 'agent'
         && request.resource.data.role == 'agent'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active']);
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photoUrl'])
+        && request.resource.data.photoUrl is string
+        && request.resource.data.photoUrl.size() < 300
+        && (request.resource.data.photoUrl == '' || request.resource.data.photoUrl.matches('https://res[.]cloudinary[.]com/aj0kawm2/.*'));
       allow delete: if false;
     }
     match /events/{id} {

@@ -2,6 +2,8 @@ import { useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { InstallBanner } from './InstallBanner'
+import { Avatar } from './Avatar'
+import { ProfilePanel } from './ProfilePanel'
 
 const base = import.meta.env.BASE_URL
 
@@ -50,7 +52,7 @@ const link = 'w-full text-center rounded-xl border border-bijou-gold/60 px-3 py-
 
 export function Shell({ children }: { children: ReactNode }) {
   const { pathname, search } = useLocation()
-  const { user, isAdmin, isStaff, logout } = useAuth()
+  const { user, profile, isAdmin, isStaff, logout } = useAuth()
   const [menu, setMenu] = useState(false)
   const [login, setLogin] = useState(false)
   const adminMode = isAdmin && pathname.startsWith('/admin')
@@ -60,6 +62,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const idx = tabs.findIndex(x => x.key === activeKey)
   const items = adminMode ? ADMIN_MENU : PUBLIC_MENU
   const role = isAdmin ? 'Organisateur' : isStaff ? 'Agent' : 'Compte sans accès'
+  const photo = user && profile?.photoUrl ? profile.photoUrl : ''
 
   return (
     <div className="min-h-screen">
@@ -77,7 +80,8 @@ export function Shell({ children }: { children: ReactNode }) {
         </Link>
         <div className="flex items-center gap-1">
           <button aria-label="Connexion" onClick={() => setLogin(v => !v)} className="relative p-2 text-bijou-ink">
-            <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+            {photo && <Avatar url={photo} size={32} />}
+            <svg viewBox="0 0 24 24" className={photo ? 'hidden' : 'h-7 w-7'} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" /><circle cx="12" cy="10" r="3" /><path d="M6 18.5c1-2.8 3.4-4 6-4s5 1.2 6 4" />
             </svg>
             {user && isStaff && <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-bijou-ok border border-bijou-ivory" />}
@@ -97,6 +101,7 @@ export function Shell({ children }: { children: ReactNode }) {
             {user ? (
               <>
                 <p className="text-sm text-bijou-silver text-center break-all">{user.email}<br /><b className="text-bijou-goldlight">{role}</b></p>
+                {isStaff && <ProfilePanel />}
                 {isStaff && <Link to="/scan" onClick={() => setLogin(false)} className={link}>Contrôle d'accès</Link>}
                 {isAdmin && <Link to="/admin?t=tableau" onClick={() => setLogin(false)} className={link}>Espace organisateur</Link>}
                 <button onClick={() => { setLogin(false); logout() }} className={link}>Se déconnecter</button>

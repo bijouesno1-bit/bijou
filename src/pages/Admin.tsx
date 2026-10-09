@@ -17,8 +17,9 @@ import { AdminVenues } from '../components/AdminVenues'
 import { AdminQr } from '../components/AdminQr'
 import { AdminTickets } from '../components/AdminTickets'
 import { EventStats } from '../components/EventStats'
+import { PosterInput } from '../components/PosterInput'
 
-type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; status: string; maxCapacity?: number | null }
+type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; status: string; maxCapacity?: number | null; poster?: string }
 type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; active: boolean; kind?: string; persons?: number; zone?: string; validUntil?: string | null }
 
 const base = import.meta.env.BASE_URL
@@ -114,6 +115,7 @@ function Dashboard() {
   const [err, setErr] = useState('')
   const [f, setF] = useState({ title: '', date: '', venue: '', city: 'Libreville', description: '' })
   const [cap, setCap] = useState('')
+  const [poster, setPoster] = useState('')
   const set = (k: keyof typeof f) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value })
 
   const load = useCallback(async () => {
@@ -140,13 +142,18 @@ function Dashboard() {
   async function createEvent(e: FormEvent) {
     e.preventDefault()
     try {
-      await addDoc(collection(db, 'events'), { ...f, title: f.title.trim(), status: 'draft', ...(Number(cap) > 0 ? { maxCapacity: Math.floor(Number(cap)) } : {}), createdAt: serverTimestamp() })
+      await addDoc(collection(db, 'events'), { ...f, title: f.title.trim(), status: 'draft', ...(poster ? { poster } : {}), ...(Number(cap) > 0 ? { maxCapacity: Math.floor(Number(cap)) } : {}), createdAt: serverTimestamp() })
       setF({ ...f, title: '', date: '', venue: '', description: '' })
       setCap('')
+      setPoster('')
       load()
     } catch {
       setErr('Création refusée.')
     }
+  }
+
+  async function setEventPoster(ev: Ev, url: string) {
+    try { await updateDoc(doc(db, 'events', ev.id), { poster: url }); load() } catch { setErr('Mise à jour refusée.') }
   }
 
   async function toggle(ev: Ev) {
@@ -176,6 +183,7 @@ function Dashboard() {
         <input className={input} placeholder="Ville" value={f.city} onChange={set('city')} required />
         <input className={input} type="number" min="1" placeholder="Capacité maximale de l'événement (facultatif)" value={cap} onChange={e => setCap(e.target.value)} />
         <textarea className={input} placeholder="Description" rows={3} value={f.description} onChange={set('description')} />
+        <PosterInput url={poster} onChange={setPoster} label="Affiche ou photo publicitaire (facultatif)" />
         <button className={btnGold}>Créer (brouillon)</button>
       </form>
 
@@ -194,6 +202,7 @@ function Dashboard() {
             <span className="text-bijou-silver">{ev.maxCapacity ? 'Capacité max : ' + ev.maxCapacity + ' (prises ' + tickets.filter(t => t.eventId === ev.id).reduce((a, t) => a + t.sold + (t.reserved ?? 0), 0) + ')' : 'Capacité max : illimitée'}</span>
             <button className={btn} onClick={() => setMax(ev)}>Capacité</button>
           </div>
+          <PosterInput url={ev.poster ?? ''} onChange={u => setEventPoster(ev, u)} compact />
           <EventStats tickets={tickets.filter(t => t.eventId === ev.id)} />
           <AdminTickets eventId={ev.id} onDone={load} />
           {tickets.filter(t => t.eventId === ev.id).map(t => (

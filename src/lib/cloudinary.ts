@@ -33,3 +33,41 @@ export async function uploadProfile(file: File): Promise<string> {
   if (!r.ok || !j.secure_url) throw new Error("Envoi refusé par le service d'images.")
   return j.secure_url
 }
+
+// Affiches : on garde les proportions, largeur max 1200 px, 2 Mo maximum.
+export function posterUrl(url: string, width = 800) {
+  return url.includes('/upload/') ? url.replace('/upload/', '/upload/c_limit,w_' + width + ',f_auto,q_auto/') : url
+}
+
+async function fitWidth(file: File, max = 1200): Promise<Blob> {
+  const bmp = await createImageBitmap(file)
+  const k = Math.min(1, max / bmp.width)
+  const w = Math.round(bmp.width * k)
+  const h = Math.round(bmp.height * k)
+  const c = document.createElement('canvas')
+  c.width = w
+  c.height = h
+  const ctx = c.getContext('2d')
+  if (!ctx) throw new Error('Image non traitable.')
+  ctx.fillStyle = '#ffffff'
+  ctx.fillRect(0, 0, w, h)
+  ctx.drawImage(bmp, 0, 0, w, h)
+  for (const q of [0.85, 0.7, 0.55]) {
+    const b = await new Promise<Blob | null>(ok => c.toBlob(ok, 'image/jpeg', q))
+    if (b && b.size <= MAX_BYTES) return b
+  }
+  throw new Error('Image trop lourde après compression (2 Mo maximum).')
+}
+
+export async function uploadPoster(file: File): Promise<string> {
+  if (!/^image\/(jpeg|png|webp)$/.test(file.type)) throw new Error('Format accepté : JPG, PNG ou WebP.')
+  if (file.size > 15000000) throw new Error('Image trop lourde (15 Mo maximum).')
+  const blob = await fitWidth(file)
+  const fd = new FormData()
+  fd.append('file', blob, 'affiche.jpg')
+  fd.append('upload_preset', PRESET)
+  const r = await fetch('https://api.cloudinary.com/v1_1/' + CLOUD + '/image/upload', { method: 'POST', body: fd })
+  const j = (await r.json().catch(() => ({}))) as { secure_url?: string }
+  if (!r.ok || !j.secure_url) throw new Error("Envoi refusé par le service d'images.")
+  return j.secure_url
+}

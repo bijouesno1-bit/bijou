@@ -9,6 +9,7 @@ import Lot from './pages/Lot'
 import Aide from './pages/Aide'
 import Apropos from './pages/Apropos'
 import Lieux from './pages/Lieux'
+import Annonces from './pages/Annonces'
 import { Shell } from './components/Shell'
 
 const base = import.meta.env.BASE_URL
@@ -31,6 +32,7 @@ function Home() {
     <div className={bg}>
       <img src={`${base}brand/logo-sombre.svg`} alt="BIJOU - Le billet authentique, l'entrée sécurisée" className="w-full max-w-sm" />
       <Link to="/reserver" className={btn}>Réserver un billet</Link>
+      <Link to="/annonces" className={btn}>Événements à venir</Link>
       <Link to="/aide" className={btn}>Comment ça marche</Link>
       <Link to="/scan" className={btn}>Contrôle d'accès (agents)</Link>
       <Link to="/admin" className={btn}>Espace organisateur</Link>
@@ -52,6 +54,7 @@ export default function App() {
       <Route path="/aide" element={<Aide />} />
       <Route path="/apropos" element={<Apropos />} />
       <Route path="/lieux" element={<Lieux />} />
+      <Route path="/annonces" element={<Annonces />} />
       <Route path="*" element={<Page title="Page introuvable" />} />
     </Routes>
     </Shell>

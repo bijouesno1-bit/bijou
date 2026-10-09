@@ -6,8 +6,9 @@ import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, where
 import { db } from '../lib/firebase'
 import { PAY_LABEL } from '../lib/requests'
 import { Venues } from '../components/Venues'
+import { posterUrl } from '../lib/cloudinary'
 
-type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string }
+type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; poster?: string }
 type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; kind?: string; persons?: number; zone?: string; validUntil?: string | null }
 
 const base = import.meta.env.BASE_URL
@@ -149,6 +150,7 @@ export default function Reserver() {
 
       {shown.map(ev => (
         <div key={ev.id} className={card}>
+          {ev.poster && <img src={posterUrl(ev.poster, 800)} alt={ev.title} loading="lazy" className="w-full rounded-lg object-contain bg-black/30" />}
           <div>
             <p className="text-lg font-semibold">{ev.title}</p>
             <p className="text-sm text-bijou-goldlight capitalize">{fmtDate(ev.date)}</p>

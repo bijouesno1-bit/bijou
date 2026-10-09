@@ -26,6 +26,7 @@ const ADMIN_TABS: Tab[] = [
 
 const PUBLIC_MENU = [
   { to: '/', label: 'Accueil' },
+  { to: '/annonces', label: 'Événements à venir' },
   { to: '/reserver', label: 'Réserver un billet' },
   { to: '/lieux', label: 'Où obtenir mes billets' },
   { to: '/aide', label: 'Comment ça marche' },
@@ -42,7 +43,7 @@ const ADMIN_MENU = [
 
 function publicKey(p: string) {
   if (p === '/') return 'accueil'
-  if (p.startsWith('/reserver') || p.startsWith('/demande')) return 'events'
+  if (p.startsWith('/reserver') || p.startsWith('/demande') || p.startsWith('/annonces')) return 'events'
   if (p.startsWith('/lieux')) return 'lieux'
   if (p.startsWith('/aide')) return 'aide'
   return ''

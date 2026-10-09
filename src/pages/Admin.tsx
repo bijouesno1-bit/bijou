@@ -13,6 +13,7 @@ import { useAuth } from '../lib/auth'
 import { StockLine } from '../components/StockLine'
 import { FreeIssue } from '../components/FreeIssue'
 import { AdminVenues } from '../components/AdminVenues'
+import { AdminTickets } from '../components/AdminTickets'
 import { EventStats } from '../components/EventStats'
 
 type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; status: string; maxCapacity?: number | null }
@@ -192,6 +193,7 @@ function Dashboard() {
             <button className={btn} onClick={() => setMax(ev)}>Capacité</button>
           </div>
           <EventStats tickets={tickets.filter(t => t.eventId === ev.id)} />
+          <AdminTickets eventId={ev.id} onDone={load} />
           {tickets.filter(t => t.eventId === ev.id).map(t => (
             <div key={t.id}><StockLine t={t} />{t.kind === 'invitation' && <FreeIssue tt={t} onDone={() => load()} />}</div>
           ))}

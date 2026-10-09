@@ -3,6 +3,7 @@ import { addDoc, collection, deleteDoc, doc, getDocs, query, serverTimestamp, up
 import { db } from '../lib/firebase'
 import { card, btn } from '../lib/ui'
 import { backfillEventNums, nextEventNum } from '../lib/eventNum'
+import { DEMO_POSTERS, attachDemoPosters } from '../lib/demoPosters'
 
 // [catégorie, prix FCFA, quantité, type, personnes, zone, déjà vendus]
 type T = [string, number, number, string, number?, string?, number?]
@@ -53,7 +54,7 @@ export function DemoPack() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   useEffect(() => {
-    backfillEventNums().then(n => { if (n > 0) window.location.reload() }).catch(() => { /* ignoré */ })
+    Promise.all([backfillEventNums().catch(() => 0), attachDemoPosters().catch(() => 0)]).then(([n, m]) => { if (n + m > 0) window.location.reload() })
   }, [])
 
   async function load() {
@@ -66,7 +67,7 @@ export function DemoPack() {
       let n = 0
       for (const e of DEMO) {
         const ref = await addDoc(collection(db, 'events'), {
-          num: await nextEventNum(), title: e.title, date: e.date, venue: e.venue, city: e.city, description: e.description,
+          num: await nextEventNum(), ...(DEMO_POSTERS[e.title] ? { poster: DEMO_POSTERS[e.title] } : {}), title: e.title, date: e.date, venue: e.venue, city: e.city, description: e.description,
           status: new Date(e.date).getTime() > Date.now() ? 'published' : 'draft', maxCapacity: e.cap, demo: true, createdAt: serverTimestamp(),
         })
         for (const [name, price, quantity, kind, persons, zone, sold] of e.t) {

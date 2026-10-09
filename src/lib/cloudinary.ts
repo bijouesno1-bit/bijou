@@ -5,6 +5,7 @@ const MAX_BYTES = 2000000
 
 // Version réduite et recadrée en carré, servie par Cloudinary.
 export function thumb(url: string, size = 96) {
+  if (url.startsWith('posters/')) return import.meta.env.BASE_URL + url
   return url.includes('/upload/') ? url.replace('/upload/', '/upload/c_fill,g_auto,w_' + size + ',h_' + size + ',f_auto,q_auto/') : url
 }
 
@@ -36,6 +37,7 @@ export async function uploadProfile(file: File): Promise<string> {
 
 // Affiches : on garde les proportions, largeur max 1200 px, 2 Mo maximum.
 export function posterUrl(url: string, width = 800) {
+  if (url.startsWith('posters/')) return import.meta.env.BASE_URL + url
   return url.includes('/upload/') ? url.replace('/upload/', '/upload/c_limit,w_' + width + ',f_auto,q_auto/') : url
 }
 

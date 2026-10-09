@@ -79,10 +79,10 @@ function TicketForm({ eventId, onDone }: { eventId: string; onDone: () => void }
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-2 border-t border-bijou-gold/20 pt-3">
-      <input className={input} placeholder="Catégorie (ex. VIP)" value={name} onChange={e => setName(e.target.value)} required />
+      <input className={input + ' placeholder:text-xs'} placeholder="Catégorie/dénomination" value={name} onChange={e => setName(e.target.value)} required />
       <div className="flex gap-2">
         {kind !== 'invitation' && <input className={input} type="number" min="0" placeholder="Prix FCFA" value={price} onChange={e => setPrice(e.target.value)} required />}
-        <input className={input} type="number" min="1" placeholder="Billets" value={qty} onChange={e => setQty(e.target.value)} required />
+        <input className={input + ' placeholder:text-xs'} type="number" min="1" placeholder="Nombre de billet en chiffre" value={qty} onChange={e => setQty(e.target.value)} required />
       </div>
       <select className={input} value={kind} onChange={e => setKind(e.target.value)}>
         <option value="classic">Classique</option>

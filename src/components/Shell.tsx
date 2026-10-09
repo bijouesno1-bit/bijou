@@ -73,19 +73,19 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <header className="print:hidden fixed top-0 inset-x-0 z-40 h-14 bg-bijou-ivory border-b border-bijou-gold/40 shadow-sm flex items-center justify-between px-3">
-        <Link to={adminMode ? '/admin?t=tableau' : '/'} className="flex items-center gap-2">
-          <img src={`${base}brand/icon.svg`} alt="" className="h-8 w-8" />
+      <header className="print:hidden fixed top-0 inset-x-0 z-40 h-14 bg-bijou-ivory border-b border-bijou-gold/40 shadow-sm grid grid-cols-[1fr_auto_1fr] items-center px-3">
+        <Link to={adminMode ? '/admin?t=tableau' : '/'} className="col-start-2 flex items-center justify-center gap-2.5">
+          <img src={`${base}brand/icon.svg`} alt="" className="h-10 w-10" />
           <span className="flex flex-col leading-none">
             <span
-              className="bg-gradient-to-r from-[#8A6D12] via-bijou-gold to-[#8A6D12] bg-clip-text text-transparent text-xl font-semibold"
-              style={{ fontFamily: "Georgia, 'Times New Roman', serif", letterSpacing: '0.28em' }}
+              className="bg-gradient-to-r from-[#8A6D12] via-bijou-gold to-[#8A6D12] bg-clip-text text-transparent text-2xl font-semibold"
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif", letterSpacing: '0.22em' }}
             >BIJOU</span>
             <span className="mt-1 h-px w-full bg-gradient-to-r from-transparent via-bijou-gold to-transparent" />
           </span>
           {/* badge admin retiré */}
         </Link>
-        <div className="flex shrink-0 items-center gap-0.5">
+        <div className="col-start-3 justify-self-end flex shrink-0 items-center gap-0.5">
           <SearchBar />
           <button aria-label="Connexion" onClick={() => setLogin(v => !v)} className="relative flex shrink-0 flex-col items-center px-0.5 py-1 text-bijou-ink">
             {photo && <Avatar url={photo} size={32} />}

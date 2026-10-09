@@ -122,6 +122,7 @@ export default function Reserver() {
   const [params] = useSearchParams()
   const only = params.get('evenement') ?? ''
   const shown = only && events.some(e => e.id === only) ? events.filter(e => e.id === only) : events
+  const one = !!only && shown.length === 1
 
   useEffect(() => {
     getDoc(doc(db, 'settings', 'payment'))
@@ -163,19 +164,19 @@ export default function Reserver() {
           {mode === 'large' && ev.poster && <img src={posterUrl(ev.poster, 800)} alt={ev.title} loading="lazy" className="w-full rounded-lg object-contain bg-black/30" />}
           <div>
             {mode === 'medium' && (ev.poster ? <img src={posterUrl(ev.poster, 300)} alt={ev.title} loading="lazy" className="float-left mr-3 h-24 w-20 rounded-lg object-cover bg-black/30" /> : null)}
-            <button type="button" onClick={() => { if (mode === 'compact') setCx(c => (c === ev.id ? '' : ev.id)) }} aria-expanded={mode === 'compact' ? cx === ev.id : undefined} className={'flex items-center gap-2 text-left ' + (mode === 'compact' ? '' : 'cursor-default')}>
+            <button type="button" onClick={() => { if (mode === 'compact') setCx(c => (c === ev.id ? '' : ev.id)) }} aria-expanded={mode === 'compact' ? (cx === ev.id || one) : undefined} className={'flex items-center gap-2 text-left ' + (mode === 'compact' ? '' : 'cursor-default')}>
               <span className="min-w-0 flex-1">
                 {ev.num ? <span className="block text-xs text-bijou-goldlight">N° {pad(ev.num)}</span> : null}
                 <span className={'block font-semibold ' + (mode === 'compact' ? 'truncate' : mode === 'medium' ? 'text-base leading-tight' : 'text-lg')}>{ev.title}</span>
               </span>
-              {mode === 'compact' && <svg viewBox="0 0 24 24" className={'h-5 w-5 shrink-0 text-bijou-goldlight transition-transform ' + (cx === ev.id ? 'rotate-180' : '')} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>}
+              {mode === 'compact' && <svg viewBox="0 0 24 24" className={'h-5 w-5 shrink-0 text-bijou-goldlight transition-transform ' + ((cx === ev.id || one) ? 'rotate-180' : '')} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>}
             </button>
             <p className={'text-sm text-bijou-goldlight' + (mode === 'compact' ? '' : ' capitalize')}>{mode === 'compact' ? dShort(ev.date) + (ev.city ? ' · ' + ev.city : '') : fmtDate(ev.date)}</p>
-            {(mode !== 'compact' || cx === ev.id) && <p className="text-sm text-bijou-silver">{ev.venue}, {ev.city}</p>}
+            {(mode !== 'compact' || (cx === ev.id || one)) && <p className="text-sm text-bijou-silver">{ev.venue}, {ev.city}</p>}
             {mode === 'medium' && <div className="clear-both" />}
           </div>
-          {ev.description && (mode !== 'compact' || cx === ev.id) && <p className={'text-sm' + (mode === 'medium' ? ' line-clamp-2' : '')}>{ev.description}</p>}
-          <div className={(mode === 'compact' && cx !== ev.id ? 'hidden ' : '') + 'flex flex-col gap-3 border-t border-bijou-gold/20 pt-3'}>
+          {ev.description && (mode !== 'compact' || (cx === ev.id || one)) && <p className={'text-sm' + (mode === 'medium' ? ' line-clamp-2' : '')}>{ev.description}</p>}
+          <div className={(mode === 'compact' && cx !== ev.id && !one ? 'hidden ' : '') + 'flex flex-col gap-3 border-t border-bijou-gold/20 pt-3'}>
             {tickets.filter(t => t.eventId === ev.id).map(t => {
               const left = t.quantity - t.sold - (t.reserved ?? 0)
               return (

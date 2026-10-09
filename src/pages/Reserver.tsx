@@ -1,7 +1,7 @@
 import { bg, card, btn, btnGold, input } from '../lib/ui'
 import { stockInfo } from '../lib/stock'
 import { useEffect, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { PAY_LABEL } from '../lib/requests'
@@ -109,6 +109,9 @@ export default function Reserver() {
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
   const [open, setOpen] = useState('')
   const [ready, setReady] = useState(false)
+  const [params] = useSearchParams()
+  const only = params.get('evenement') ?? ''
+  const shown = only && events.some(e => e.id === only) ? events.filter(e => e.id === only) : events
 
   useEffect(() => {
     getDoc(doc(db, 'settings', 'payment'))
@@ -144,7 +147,7 @@ export default function Reserver() {
       {state === 'error' && <p className="text-bijou-alert text-center">Impossible de charger les événements. Réessaie dans un instant.</p>}
       {state === 'ok' && events.length === 0 && <p className="text-bijou-silver text-center">Aucun événement à venir pour le moment.</p>}
 
-      {events.map(ev => (
+      {shown.map(ev => (
         <div key={ev.id} className={card}>
           <div>
             <p className="text-lg font-semibold">{ev.title}</p>
@@ -177,6 +180,7 @@ export default function Reserver() {
       ))}
 
       <Venues />
+      {shown.length < events.length && <Link to="/reserver" className={btn}>Voir tous les événements</Link>}
       <Link to="/" className={btn}>Retour à l'accueil</Link>
     </div>
   )

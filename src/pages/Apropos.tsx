@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 
 // Contact public à afficher (WhatsApp ou e-mail professionnel). Laisser vide pour le masquer.
-const CONTACT = ''
+const TEL = '+24160141924'
+const MAILS = ['bijouesno1@gmail.com', 'pcinformatique28@gmail.com']
+const lien = 'rounded-xl border border-bijou-gold/60 px-3 py-2 text-sm font-medium text-center active:scale-95 transition'
 
 const card = 'w-full max-w-md rounded-xl border border-bijou-gold/40 bg-white/5 p-4 flex flex-col gap-2'
 
@@ -18,12 +20,15 @@ export default function Apropos() {
         <p className="font-semibold text-bijou-goldlight">Créateur technique</p>
         <p className="text-sm">Monsieur KOZANGUE ESSONO PATRICK BERTIN, informaticien gabonais, fondateur de la start-up informatique PC-INFORMATIQUE, qui a créé l'appellation BIJOU.</p>
       </div>
-      {CONTACT && (
-        <div className={card}>
-          <p className="font-semibold text-bijou-goldlight">Contact</p>
-          <p className="text-sm break-all">{CONTACT}</p>
+      <div className={card}>
+        <p className="font-semibold text-bijou-goldlight">Contact</p>
+        <p className="text-sm">+241 60 14 19 24</p>
+        <div className="flex gap-2">
+          <a className={lien + ' flex-1'} href={'https://wa.me/' + TEL.replace('+', '')} target="_blank" rel="noreferrer">WhatsApp</a>
+          <a className={lien + ' flex-1'} href={'tel:' + TEL}>Appeler</a>
         </div>
-      )}
+        {MAILS.map(m => <a key={m} className={lien + ' break-all'} href={'mailto:' + m}>{m}</a>)}
+      </div>
       <Link to="/" className="w-full max-w-md text-center rounded-xl border border-bijou-gold/60 px-5 py-3 font-medium active:scale-95 transition">Retour à l'accueil</Link>
     </div>
   )

@@ -7,8 +7,10 @@ import { db } from '../lib/firebase'
 import { PAY_LABEL } from '../lib/requests'
 import { Venues } from '../components/Venues'
 import { posterUrl } from '../lib/cloudinary'
+import { pad } from '../lib/eventNum'
+import { ViewModeBar, useViewMode } from '../components/ViewModes'
 
-type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; poster?: string }
+type Ev = { id: string; num?: number; title: string; date: string; venue: string; city: string; description: string; poster?: string }
 type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; kind?: string; persons?: number; zone?: string; validUntil?: string | null }
 
 const base = import.meta.env.BASE_URL
@@ -18,6 +20,11 @@ function fmtDate(d: string) {
   const x = new Date(d)
   return x.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
     + ' à ' + x.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+}
+
+function dShort(d: string) {
+  const x = new Date(d)
+  return !d || isNaN(x.getTime()) ? '' : x.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) + ' · ' + x.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
 function ReserveForm({ eventId, tt, left, ready, onClose }: { eventId: string; tt: Tt; left: number; ready: boolean; onClose: () => void }) {
@@ -110,6 +117,8 @@ export default function Reserver() {
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
   const [open, setOpen] = useState('')
   const [ready, setReady] = useState(false)
+  const [mode, setMode] = useViewMode('reserver')
+  const [cx, setCx] = useState('')
   const [params] = useSearchParams()
   const only = params.get('evenement') ?? ''
   const shown = only && events.some(e => e.id === only) ? events.filter(e => e.id === only) : events
@@ -148,16 +157,25 @@ export default function Reserver() {
       {state === 'error' && <p className="text-bijou-alert text-center">Impossible de charger les événements. Réessaie dans un instant.</p>}
       {state === 'ok' && events.length === 0 && <p className="text-bijou-silver text-center">Aucun événement à venir pour le moment.</p>}
 
+      {shown.length > 0 && <ViewModeBar mode={mode} onChange={setMode} />}
       {shown.map(ev => (
         <div key={ev.id} className={card}>
-          {ev.poster && <img src={posterUrl(ev.poster, 800)} alt={ev.title} loading="lazy" className="w-full rounded-lg object-contain bg-black/30" />}
+          {mode === 'large' && ev.poster && <img src={posterUrl(ev.poster, 800)} alt={ev.title} loading="lazy" className="w-full rounded-lg object-contain bg-black/30" />}
           <div>
-            <p className="text-lg font-semibold">{ev.title}</p>
-            <p className="text-sm text-bijou-goldlight capitalize">{fmtDate(ev.date)}</p>
-            <p className="text-sm text-bijou-silver">{ev.venue}, {ev.city}</p>
+            {mode === 'medium' && (ev.poster ? <img src={posterUrl(ev.poster, 300)} alt={ev.title} loading="lazy" className="float-left mr-3 h-24 w-20 rounded-lg object-cover bg-black/30" /> : null)}
+            <button type="button" onClick={() => { if (mode === 'compact') setCx(c => (c === ev.id ? '' : ev.id)) }} aria-expanded={mode === 'compact' ? cx === ev.id : undefined} className={'flex items-center gap-2 text-left ' + (mode === 'compact' ? '' : 'cursor-default')}>
+              <span className="min-w-0 flex-1">
+                {ev.num ? <span className="block text-xs text-bijou-goldlight">N° {pad(ev.num)}</span> : null}
+                <span className={'block font-semibold ' + (mode === 'compact' ? 'truncate' : mode === 'medium' ? 'text-base leading-tight' : 'text-lg')}>{ev.title}</span>
+              </span>
+              {mode === 'compact' && <svg viewBox="0 0 24 24" className={'h-5 w-5 shrink-0 text-bijou-goldlight transition-transform ' + (cx === ev.id ? 'rotate-180' : '')} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>}
+            </button>
+            <p className={'text-sm text-bijou-goldlight' + (mode === 'compact' ? '' : ' capitalize')}>{mode === 'compact' ? dShort(ev.date) + (ev.city ? ' · ' + ev.city : '') : fmtDate(ev.date)}</p>
+            {(mode !== 'compact' || cx === ev.id) && <p className="text-sm text-bijou-silver">{ev.venue}, {ev.city}</p>}
+            {mode === 'medium' && <div className="clear-both" />}
           </div>
-          {ev.description && <p className="text-sm">{ev.description}</p>}
-          <div className="flex flex-col gap-3 border-t border-bijou-gold/20 pt-3">
+          {ev.description && (mode !== 'compact' || cx === ev.id) && <p className={'text-sm' + (mode === 'medium' ? ' line-clamp-2' : '')}>{ev.description}</p>}
+          <div className={(mode === 'compact' && cx !== ev.id ? 'hidden ' : '') + 'flex flex-col gap-3 border-t border-bijou-gold/20 pt-3'}>
             {tickets.filter(t => t.eventId === ev.id).map(t => {
               const left = t.quantity - t.sold - (t.reserved ?? 0)
               return (

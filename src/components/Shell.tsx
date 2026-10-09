@@ -1,3 +1,4 @@
+import { menuBorder } from '../chrome'
 import { useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
@@ -33,8 +34,10 @@ const PUBLIC_MENU = [
   { to: '/lieux', label: 'Où obtenir mes billets' },
   { to: '/aide', label: 'Comment ça marche' },
   { to: '/apropos', label: 'À propos' },
+  { to: '/organisateur', label: 'Publier mon événement' },
+  { to: '/organisateur', label: 'Devenir organisateur' },
   { to: '/scan', label: "Contrôle d'accès (agents)" },
-  { to: '/admin', label: 'Espace organisateur' },
+  { to: '/admin', label: 'Espace administrateur' },
 ]
 
 const ADMIN_MENU = [
@@ -55,7 +58,7 @@ const link = 'w-full text-center rounded-xl border border-bijou-gold/60 px-3 py-
 
 export function Shell({ children }: { children: ReactNode }) {
   const { pathname, search } = useLocation()
-  const { user, profile, isAdmin, isStaff, logout } = useAuth()
+  const { user, profile, isAdmin, isStaff, isOrganizer, logout } = useAuth()
   const [menu, setMenu] = useState(false)
   const [login, setLogin] = useState(false)
   const adminMode = isAdmin && pathname.startsWith('/admin')
@@ -64,7 +67,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const activeKey = adminMode ? t : publicKey(pathname)
   const idx = tabs.findIndex(x => x.key === activeKey)
   const items = adminMode ? ADMIN_MENU : PUBLIC_MENU
-  const role = isAdmin ? 'Organisateur' : isStaff ? 'Agent' : 'Compte sans accès'
+  const role = isAdmin ? 'Organisateur' : isStaff ? 'Agent' : isOrganizer ? 'Annonceur' : 'Compte sans accès'
   const photo = user && profile?.photoUrl ? profile.photoUrl : ''
   const shortName = !user ? '' : (((profile as unknown as { name?: string } | null)?.name ?? '').trim() || (user.email ?? '').split('@')[0]).split(' ')[0]
 
@@ -109,14 +112,14 @@ export function Shell({ children }: { children: ReactNode }) {
                 <p className="text-sm text-bijou-silver text-center break-all">{user.email}<br /><b className="text-bijou-goldlight">{role}</b></p>
                 {isStaff && <ProfilePanel />}
                 {isStaff && <Link to="/scan" onClick={() => setLogin(false)} className={link}>Contrôle d'accès</Link>}
-                {isAdmin && <Link to="/admin?t=tableau" onClick={() => setLogin(false)} className={link}>Espace organisateur</Link>}
+                {isAdmin && <Link to="/admin?t=tableau" onClick={() => setLogin(false)} className={link}>Espace administrateur</Link>}
                 <button onClick={() => { setLogin(false); logout() }} className={link}>Se déconnecter</button>
               </>
             ) : (
               <>
                 <p className="text-sm text-bijou-silver text-center">Se connecter</p>
                 <Link to="/scan" onClick={() => setLogin(false)} className={link}>Espace agent</Link>
-                <Link to="/admin" onClick={() => setLogin(false)} className={link}>Espace organisateur</Link>
+                <Link to="/admin" onClick={() => setLogin(false)} className={link}>Espace administrateur</Link>
               </>
             )}
           </div>
@@ -136,7 +139,7 @@ export function Shell({ children }: { children: ReactNode }) {
             const on = adminMode && m.to.startsWith('/admin') ? m.to.endsWith('t=' + t) : !adminMode && pathname === m.to
             return (
               <Link key={m.to} to={m.to === '#login' ? pathname + search : m.to} onClick={() => { setMenu(false); if (m.to === '#login') setLogin(true) }}
-                className={'rounded-xl px-4 py-3 border active:scale-95 transition ' + (on ? 'border-bijou-gold text-bijou-goldlight' : 'border-bijou-silver/20')}>
+                style={menuBorder(m.label)} className={'rounded-xl px-4 py-3 border active:scale-95 transition ' + (on ? 'border-bijou-gold text-bijou-goldlight' : 'border-bijou-silver/20')}>
                 {m.to === '#login' && user ? 'Mon compte' : m.label}
               </Link>
             )

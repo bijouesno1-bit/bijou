@@ -7,6 +7,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { AdminPaymentSettings } from '../components/AdminPaymentSettings'
 import { AdminDashboard } from '../components/AdminDashboard'
 import { AdminRequests } from '../components/AdminRequests'
+import { AdminAnnonces } from '../components/AdminAnnonces'
 import { AdminAgents } from '../components/AdminAgents'
 import { AdminCheckpoints } from '../components/AdminCheckpoints'
 import { LoginForm } from '../components/LoginForm'
@@ -29,7 +30,7 @@ type Ev = { num?: number; id: string; title: string; date: string; venue: string
 type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; active: boolean; kind?: string; persons?: number; zone?: string; validUntil?: string | null }
 
 const base = import.meta.env.BASE_URL
-const TITLES: Record<string, string> = { tableau: 'Tableau de bord', demandes: 'Demandes de réservation', evenements: 'Événements', equipe: 'Agents et portes', reglages: 'Réglages' }
+const TITLES: Record<string, string> = { tableau: 'Tableau de bord', demandes: 'Demandes de réservation', annonces: 'Annonces en attente', evenements: 'Événements', equipe: 'Agents et portes', reglages: 'Réglages' }
 
 function Header({ title }: { title: string }) {
   return (
@@ -175,6 +176,7 @@ function Dashboard() {
       {t === 'tableau' && <AdminDashboard />}
       {t === 'reglages' && <AdminPaymentSettings />}
       {t === 'demandes' && <AdminRequests />}
+      {t === 'annonces' && <AdminAnnonces />}
       {t === 'reglages' && <AdminVenues />}
       {t === 'reglages' && <AdminQr events={events} />}
       {t === 'equipe' && <AdminAgents />}
@@ -240,7 +242,7 @@ export default function Admin() {
 function Login() {
   return (
     <div className={bg}>
-      <Header title="Espace organisateur" />
+      <Header title="Espace administrateur" />
       <LoginForm />
       <Link to="/" className={btn + ' w-full max-w-md'}>Retour à l'accueil</Link>
     </div>

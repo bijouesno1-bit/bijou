@@ -18,6 +18,7 @@ import { AdminQr } from '../components/AdminQr'
 import { AdminTickets } from '../components/AdminTickets'
 import { EventStats } from '../components/EventStats'
 import { EventHistory } from '../components/EventHistory'
+import { DemoPack, deleteEventDeep } from '../components/DemoPack'
 import { PosterInput } from '../components/PosterInput'
 
 type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; status: string; maxCapacity?: number | null; poster?: string }
@@ -177,6 +178,7 @@ function Dashboard() {
 
       <div className={t === 'evenements' ? 'contents' : 'hidden'}>
         <EventHistory />
+        <DemoPack />
       <form onSubmit={createEvent} className={card}>
         <h2 className="text-bijou-goldlight">Nouvel événement</h2>
         <input className={input} placeholder="Titre" value={f.title} onChange={set('title')} required />
@@ -212,6 +214,7 @@ function Dashboard() {
           ))}
           <TicketForm eventId={ev.id} onDone={load} />
           <button className={btn} onClick={() => toggle(ev)}>{ev.status === 'published' ? 'Dépublier' : 'Publier'}</button>
+          <button className={btn + ' text-bijou-alert'} onClick={async () => { if (!window.confirm('Supprimer « ' + ev.title + ' » et ses billets ?')) return; try { await deleteEventDeep(ev.id); setEvents(x => x.filter(e => e.id !== ev.id)); setTickets(x => x.filter(t => t.eventId !== ev.id)) } catch { window.alert('Suppression refusée.') } }}>Supprimer</button>
         </div>
       ))}
 

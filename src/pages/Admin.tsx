@@ -1,6 +1,6 @@
 import { bg, card, btn, btnGold, input } from '../lib/ui'
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { AdminPaymentSettings } from '../components/AdminPaymentSettings'
 import { AdminDashboard } from '../components/AdminDashboard'
 import { AdminRequests } from '../components/AdminRequests'
@@ -22,6 +22,7 @@ type Ev = { id: string; title: string; date: string; venue: string; city: string
 type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; active: boolean; kind?: string; persons?: number; zone?: string; validUntil?: string | null }
 
 const base = import.meta.env.BASE_URL
+const TITLES: Record<string, string> = { tableau: 'Tableau de bord', demandes: 'Demandes de réservation', evenements: 'Événements', equipe: 'Agents et portes', reglages: 'Réglages' }
 
 function Header({ title }: { title: string }) {
   return (
@@ -106,6 +107,8 @@ function TicketForm({ eventId, onDone }: { eventId: string; onDone: () => void }
 
 function Dashboard() {
   const { logout } = useAuth()
+  const [sp] = useSearchParams()
+  const t = sp.get('t') ?? 'tableau'
   const [events, setEvents] = useState<Ev[]>([])
   const [tickets, setTickets] = useState<Tt[]>([])
   const [err, setErr] = useState('')
@@ -153,17 +156,18 @@ function Dashboard() {
 
   return (
     <div className={bg}>
-      <Header title="BIJOU Admin" />
+      <h1 className="text-xl text-bijou-goldlight">{TITLES[t] ?? TITLES.tableau}</h1>
       {err && <p className="text-bijou-alert text-sm max-w-md text-center">{err}</p>}
 
-      <AdminDashboard />
-      <AdminPaymentSettings />
-      <AdminRequests />
-      <AdminVenues />
-      <AdminQr events={events} />
-      <AdminAgents />
-      <AdminCheckpoints />
+      {t === 'tableau' && <AdminDashboard />}
+      {t === 'reglages' && <AdminPaymentSettings />}
+      {t === 'demandes' && <AdminRequests />}
+      {t === 'reglages' && <AdminVenues />}
+      {t === 'reglages' && <AdminQr events={events} />}
+      {t === 'equipe' && <AdminAgents />}
+      {t === 'equipe' && <AdminCheckpoints />}
 
+      <div className={t === 'evenements' ? 'contents' : 'hidden'}>
       <form onSubmit={createEvent} className={card}>
         <h2 className="text-bijou-goldlight">Nouvel événement</h2>
         <input className={input} placeholder="Titre" value={f.title} onChange={set('title')} required />
@@ -200,6 +204,7 @@ function Dashboard() {
         </div>
       ))}
 
+      </div>
       <button className={btn} onClick={logout}>Se déconnecter</button>
       <Link to="/" className={btn + ' w-full max-w-md'}>Retour à l'accueil</Link>
     </div>

@@ -14,6 +14,7 @@ import { useAuth } from '../lib/auth'
 import { StockLine } from '../components/StockLine'
 import { FreeIssue } from '../components/FreeIssue'
 import { AdminVenues } from '../components/AdminVenues'
+import { AdminQr } from '../components/AdminQr'
 import { AdminTickets } from '../components/AdminTickets'
 import { EventStats } from '../components/EventStats'
 
@@ -159,6 +160,7 @@ function Dashboard() {
       <AdminPaymentSettings />
       <AdminRequests />
       <AdminVenues />
+      <AdminQr events={events} />
       <AdminAgents />
       <AdminCheckpoints />
 

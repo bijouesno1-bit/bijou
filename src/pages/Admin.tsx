@@ -15,7 +15,7 @@ import { FreeIssue } from '../components/FreeIssue'
 import { AdminVenues } from '../components/AdminVenues'
 import { EventStats } from '../components/EventStats'
 
-type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; status: string }
+type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; status: string; maxCapacity?: number | null }
 type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; active: boolean; kind?: string; persons?: number; zone?: string; validUntil?: string | null }
 
 const base = import.meta.env.BASE_URL
@@ -112,6 +112,7 @@ function Dashboard() {
   const [tickets, setTickets] = useState<Tt[]>([])
   const [err, setErr] = useState('')
   const [f, setF] = useState({ title: '', date: '', venue: '', city: 'Libreville', description: '' })
+  const [cap, setCap] = useState('')
   const set = (k: keyof typeof f) => (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value })
 
   const load = useCallback(async () => {
@@ -128,11 +129,19 @@ function Dashboard() {
 
   useEffect(() => { load() }, [load])
 
+  async function setMax(ev: Ev) {
+    const v = window.prompt("Capacité maximale de l'événement (vide ou 0 = illimitée) :", ev.maxCapacity ? String(ev.maxCapacity) : '')
+    if (v === null) return
+    const n = Math.floor(Number(v) || 0)
+    try { await updateDoc(doc(db, 'events', ev.id), { maxCapacity: n > 0 ? n : null }); load() } catch { setErr('Mise à jour refusée.') }
+  }
+
   async function createEvent(e: FormEvent) {
     e.preventDefault()
     try {
-      await addDoc(collection(db, 'events'), { ...f, title: f.title.trim(), status: 'draft', createdAt: serverTimestamp() })
+      await addDoc(collection(db, 'events'), { ...f, title: f.title.trim(), status: 'draft', ...(Number(cap) > 0 ? { maxCapacity: Math.floor(Number(cap)) } : {}), createdAt: serverTimestamp() })
       setF({ ...f, title: '', date: '', venue: '', description: '' })
+      setCap('')
       load()
     } catch {
       setErr('Création refusée.')
@@ -162,6 +171,7 @@ function Dashboard() {
         <input className={input} type="datetime-local" value={f.date} onChange={set('date')} required />
         <input className={input} placeholder="Lieu" value={f.venue} onChange={set('venue')} required />
         <input className={input} placeholder="Ville" value={f.city} onChange={set('city')} required />
+        <input className={input} type="number" min="1" placeholder="Capacité maximale de l'événement (facultatif)" value={cap} onChange={e => setCap(e.target.value)} />
         <textarea className={input} placeholder="Description" rows={3} value={f.description} onChange={set('description')} />
         <button className={btnGold}>Créer (brouillon)</button>
       </form>
@@ -176,6 +186,10 @@ function Dashboard() {
             <span className={ev.status === 'published' ? 'text-bijou-ok text-sm' : 'text-bijou-silver text-sm'}>
               {ev.status === 'published' ? 'Publié' : 'Brouillon'}
             </span>
+          </div>
+          <div className="flex items-center justify-between gap-2 text-sm">
+            <span className="text-bijou-silver">{ev.maxCapacity ? 'Capacité max : ' + ev.maxCapacity + ' (prises ' + tickets.filter(t => t.eventId === ev.id).reduce((a, t) => a + t.sold + (t.reserved ?? 0), 0) + ')' : 'Capacité max : illimitée'}</span>
+            <button className={btn} onClick={() => setMax(ev)}>Capacité</button>
           </div>
           <EventStats tickets={tickets.filter(t => t.eventId === ev.id)} />
           {tickets.filter(t => t.eventId === ev.id).map(t => (

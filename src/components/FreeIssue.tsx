@@ -1,3 +1,4 @@
+import { globalLeft } from '../lib/capacity'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore'
@@ -38,6 +39,8 @@ export function FreeIssue({ tt, onDone }: Props) {
     try {
       const bRef = doc(collection(db, 'batches'))
       setBatchId(bRef.id)
+      const gl = await globalLeft(tt.eventId)
+      if (gl !== null && count > gl) throw new Error('Capacité maximale atteinte : ' + gl + ' place(s) restante(s) pour cet événement.')
       const toks: string[] = []
       await runTransaction(db, async tx => {
         const tRef = doc(db, 'ticketTypes', tt.id)

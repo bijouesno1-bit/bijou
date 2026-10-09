@@ -1,3 +1,4 @@
+import { globalLeft } from '../lib/capacity'
 import { useCallback, useEffect, useState } from 'react'
 import { collection, doc, getDocs, orderBy, query, runTransaction, serverTimestamp, where, type Timestamp } from 'firebase/firestore'
 import { PayPanel } from './PayPanel'
@@ -71,6 +72,8 @@ export function AdminRequests() {
         let reserved = t.reserved ?? 0
         if (status === 'approved' && cur.status !== 'approved') {
           if (t.quantity - t.sold - reserved < cur.quantity) throw new Error('Stock insuffisant pour accepter cette demande.')
+          const gl = await globalLeft(String((ts.data() as { eventId?: string }).eventId ?? ''))
+          if (gl !== null && cur.quantity > gl) throw new Error('Capacité maximale de l’événement atteinte : ' + gl + ' place(s) restante(s).')
           reserved += cur.quantity
         } else if (status !== 'approved' && cur.status === 'approved') {
           reserved = Math.max(0, reserved - cur.quantity)

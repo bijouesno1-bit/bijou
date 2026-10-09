@@ -27,6 +27,7 @@ const ADMIN_TABS: Tab[] = [
 
 const PUBLIC_MENU = [
   { to: '/', label: 'Accueil' },
+  { to: '#login', label: 'Se connecter' },
   { to: '/annonces', label: 'Événements à venir' },
   { to: '/reserver', label: 'Réserver un billet' },
   { to: '/lieux', label: 'Où obtenir mes billets' },
@@ -134,9 +135,9 @@ export function Shell({ children }: { children: ReactNode }) {
           {items.map(m => {
             const on = adminMode && m.to.startsWith('/admin') ? m.to.endsWith('t=' + t) : !adminMode && pathname === m.to
             return (
-              <Link key={m.to} to={m.to} onClick={() => setMenu(false)}
+              <Link key={m.to} to={m.to === '#login' ? pathname + search : m.to} onClick={() => { setMenu(false); if (m.to === '#login') setLogin(true) }}
                 className={'rounded-xl px-4 py-3 border active:scale-95 transition ' + (on ? 'border-bijou-gold text-bijou-goldlight' : 'border-bijou-silver/20')}>
-                {m.label}
+                {m.to === '#login' && user ? 'Mon compte' : m.label}
               </Link>
             )
           })}

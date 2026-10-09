@@ -135,6 +135,7 @@ export default function Scan() {
         return { kind: 'ok', t }
       })
       setRes(r)
+      try { navigator.vibrate?.(r.kind === 'ok' ? 120 : [300, 100, 300]) } catch { /* ignoré */ }
       if (r.kind !== 'ok') addDoc(collection(db, 'scans'), { ticketId: token, result: r.kind, ...('t' in r ? meta(r.t) : {}), by: user.uid, at: serverTimestamp(), ...(gateName ? { checkpoint: gateName, checkpointId: gate } : {}) }).catch(() => {})
     } catch {
       setRes({ kind: 'error' })
@@ -167,14 +168,15 @@ export default function Scan() {
       <div className={`min-h-screen ${style} text-white p-6 flex flex-col items-center justify-center gap-4 text-center`}>
         <p className="text-4xl font-bold">{title}</p>
         {t && <>
-          <p className="text-xl">{t.holderName}</p>
+          <p className="text-3xl font-bold">{t.holderName}</p>
           <p>{t.eventTitle} · {t.ticketName}</p>
           {(t.persons ?? 1) > 1 && <p className="text-2xl font-bold">{t.persons} personnes autorisées</p>}
           {t.kind && !KIND_PLAIN.includes(t.kind) && <p className="text-lg font-bold uppercase tracking-widest">{KIND_LABEL[t.kind] ?? t.kind}</p>}
           {t.zone && <p>{t.zone}</p>}
           {res.kind === 'bad' && <p>{t.status === 'expired' ? 'Billet expiré' : t.status === 'revoked' ? 'Billet révoqué' : 'Billet annulé ou non valide'}</p>}
-          <p className="font-mono">{refOf(t.requestId)}-{t.seq} ({t.seq}/{t.count})</p>
-          {res.kind === 'used' && t.usedAt && <p>Entré à {t.usedAt.toDate().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>}
+          <p className="font-mono text-2xl font-bold">{refOf(t.requestId)}-{t.seq} ({t.seq}/{t.count})</p>
+          {res.kind === 'ok' && <p className="text-sm opacity-90 max-w-xs">Compare le nom et la référence avec le billet. À l'écran : bandeau doré animé. Sur papier : logo BIJOU en filigrane.</p>}
+          {res.kind === 'used' && t.usedAt && <p className="text-lg font-semibold">Déjà entré le {t.usedAt.toDate().toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</p>}
         </>}
         {res.kind === 'error' && <>
           <p className="text-xl">Le serveur n'a pas répondu : ce billet n'est ni validé ni refusé.</p>

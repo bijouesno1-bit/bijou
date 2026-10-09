@@ -13,10 +13,19 @@ async function count(col: string, ...c: C[]): Promise<number> {
   return (await getCountFromServer(q)).data().count
 }
 
-function Stat({ label, value, tone }: { label: string; value: string | number; tone?: 'warn' }) {
+const TONES: Record<string, string> = {
+  'Demandes en attente': 'border-bijou-gold text-bijou-goldlight',
+  'Infos demandées': 'border-sky-400 text-sky-300',
+  'Paiements à vérifier': 'border-orange-400 text-orange-300',
+  'Demandes payées': 'border-emerald-400 text-emerald-300',
+  'Billets émis': 'border-violet-400 text-violet-300',
+  'Billets utilisés': 'border-teal-300 text-teal-200',
+}
+
+function Stat({ label, value }: { label: string; value: string | number; tone?: 'warn' }) {
   return (
-    <div className="rounded-lg border border-bijou-silver/30 bg-black/20 p-2 flex flex-col">
-      <span className={'text-xl font-semibold ' + (tone === 'warn' ? 'text-bijou-goldlight' : '')}>{value}</span>
+    <div className={'rounded-lg border-2 bg-black/20 p-2 h-20 flex flex-col items-center justify-center text-center ' + (TONES[label] ?? TONES['Demandes en attente'])}>
+      <span className="text-xl font-semibold">{value}</span>
       <span className="text-xs text-bijou-silver">{label}</span>
     </div>
   )
@@ -86,8 +95,8 @@ export function AdminDashboard() {
       {full && <p className="rounded-lg bg-bijou-alert text-white px-3 py-1 text-sm font-semibold">Alerte : les entrées ont atteint le nombre de billets émis.</p>}
       <div className="text-sm">
         <p className="text-bijou-goldlight">Payants / gratuits (sans montant)</p>
-        <p>Payants : émis {sum(false, 'issued')} · entrés {sum(false, 'used')}</p>
-        <p>Gratuits : émis {sum(true, 'issued')} · entrés {sum(true, 'used')}</p>
+        <p className="text-bijou-goldlight">Payants : émis {sum(false, 'issued')} · entrés {sum(false, 'used')}</p>
+        <p className="text-pink-300">Gratuits : émis {sum(true, 'issued')} · entrés {sum(true, 'used')}</p>
       </div>
       <div className="text-sm">
         <p className="text-bijou-goldlight">Par catégorie</p>

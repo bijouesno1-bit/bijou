@@ -17,6 +17,7 @@ import { AdminVenues } from '../components/AdminVenues'
 import { AdminQr } from '../components/AdminQr'
 import { AdminTickets } from '../components/AdminTickets'
 import { EventStats } from '../components/EventStats'
+import { EventHistory } from '../components/EventHistory'
 import { PosterInput } from '../components/PosterInput'
 
 type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; status: string; maxCapacity?: number | null; poster?: string }
@@ -175,6 +176,7 @@ function Dashboard() {
       {t === 'equipe' && <AdminCheckpoints />}
 
       <div className={t === 'evenements' ? 'contents' : 'hidden'}>
+        <EventHistory />
       <form onSubmit={createEvent} className={card}>
         <h2 className="text-bijou-goldlight">Nouvel événement</h2>
         <input className={input} placeholder="Titre" value={f.title} onChange={set('title')} required />

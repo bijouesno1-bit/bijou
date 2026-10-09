@@ -13,7 +13,7 @@ type Res = { kind: 'ok' | 'used' | 'bad' | 'unknown' | 'error'; t?: Tk }
 type Det = { detect: (s: CanvasImageSource) => Promise<{ rawValue: string }[]> }
 
 const base = import.meta.env.BASE_URL
-const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory p-5 flex flex-col items-center gap-4'
+const bg = 'min-h-screen bg-gradient-to-br from-[#07070C]/60 to-bijou-navy/60 text-bijou-ivory p-5 flex flex-col items-center gap-4'
 const btn = 'rounded-xl border border-bijou-gold/60 px-4 py-2 font-medium active:scale-95 transition text-center'
 const btnGold = 'rounded-xl bg-bijou-gold text-bijou-ink px-4 py-2 font-semibold active:scale-95 transition'
 const input = 'w-full rounded-lg bg-black/40 border border-bijou-silver/40 px-3 py-2 text-bijou-ivory'

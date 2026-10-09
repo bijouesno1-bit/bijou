@@ -13,7 +13,7 @@ type Tk = {
 }
 
 const base = import.meta.env.BASE_URL
-const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory p-5 flex flex-col items-center gap-4 print:bg-white print:p-0'
+const bg = 'min-h-screen bg-gradient-to-br from-[#07070C]/60 to-bijou-navy/60 text-bijou-ivory p-5 flex flex-col items-center gap-4 print:bg-white print:p-0'
 const btn = 'rounded-xl border border-bijou-gold/60 px-4 py-2 font-medium active:scale-95 transition text-center print:hidden'
 const STATE_LABEL: Record<string, string> = { used: 'Billet déjà utilisé', cancelled: 'Billet annulé', revoked: 'Billet révoqué' }
 
@@ -28,6 +28,8 @@ export default function Billet() {
   const { token } = useParams()
   const [t, setT] = useState<Tk | null>(null)
   const [qr, setQr] = useState('')
+  const [now, setNow] = useState(new Date())
+  useEffect(() => { const i = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(i) }, [])
   const [state, setState] = useState<'loading' | 'ok' | 'missing' | 'error'>('loading')
 
   useEffect(() => {
@@ -48,7 +50,8 @@ export default function Billet() {
       {state === 'missing' && <p className="text-bijou-alert text-center">Billet introuvable. Vérifie le lien.</p>}
       {state === 'error' && <p className="text-bijou-alert text-center">Impossible de charger le billet. Réessaie.</p>}
       {state === 'ok' && t && (
-        <div className={'w-full max-w-sm rounded-2xl border-2 bg-bijou-ivory text-bijou-ink p-5 flex flex-col items-center gap-3 ' + (KIND_CARD[t.kind ?? 'classic'] ?? KIND_CARD.classic)}>
+        <div className={'relative isolate overflow-hidden w-full max-w-sm rounded-2xl border-2 bg-bijou-ivory text-bijou-ink p-5 flex flex-col items-center gap-3 ' + (KIND_CARD[t.kind ?? 'classic'] ?? KIND_CARD.classic)}>
+          <div aria-hidden="true" className="pointer-events-none absolute -inset-1/2 -z-10 opacity-[0.09] -rotate-[25deg]" style={{ backgroundImage: "url(" + base + "brand/logo-clair.svg)", backgroundSize: "140px auto", backgroundRepeat: "repeat" }} />
           <img src={`${base}brand/logo-clair.svg`} alt="BIJOU" className="w-40" />
           <p className="text-xs uppercase tracking-widest opacity-60">Billet authentique</p>
           <h1 className="text-xl font-bold text-center">{t.eventTitle}</h1>
@@ -61,6 +64,7 @@ export default function Billet() {
           {t.kind === 'invitation' && <p className="text-sm italic">Invitation : entrée gratuite</p>}
           {qr && <img src={qr} alt="QR code du billet" className="w-56 h-56" />}
           <p className="font-mono text-sm">{refOf(t.requestId)}-{t.seq}</p>
+          <p className="bijou-live rounded px-3 py-0.5 text-xs font-semibold print:hidden">Vérifié en direct · {now.toLocaleString('fr-FR')}</p>
           {t.kind === 'invitation' && <p className="text-sm">Entrée gratuite</p>}
           <p className="text-sm">{t.holderName} · billet {t.seq}/{t.count}</p>
           {((t.persons ?? 1) > 1 || t.zone) && <p className="text-sm">{[(t.persons ?? 1) > 1 && `Valable pour ${t.persons} personnes`, t.zone].filter(Boolean).join(' · ')}</p>}

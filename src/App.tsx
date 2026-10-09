@@ -13,7 +13,7 @@ import Annonces from './pages/Annonces'
 import { Shell } from './components/Shell'
 
 const base = import.meta.env.BASE_URL
-const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory flex flex-col items-center justify-center gap-5 p-6'
+const bg = 'min-h-screen bg-gradient-to-br from-[#07070C]/60 to-bijou-navy/60 text-bijou-ivory flex flex-col items-center justify-center gap-5 p-6'
 const btn = 'w-full max-w-sm text-center rounded-xl border border-bijou-gold/60 px-5 py-3 font-medium active:scale-95 transition'
 
 function Page({ title, children }: { title: string; children?: ReactNode }) {

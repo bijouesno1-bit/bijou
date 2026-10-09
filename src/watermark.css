@@ -2,9 +2,17 @@ body::before {
   content: "";
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: -1;
   pointer-events: none;
   background: url("./fond-stade.jpg") center / cover no-repeat;
-  opacity: 0.22;
-  filter: blur(1.5px) saturate(0.8);
+  opacity: 0.55;
+  filter: blur(1.5px) saturate(0.9);
+}
+@media print { body::before { display: none; } }
+@keyframes bijou-shine { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.bijou-live {
+  background: linear-gradient(90deg, #8A6D12, #F5D76E, #8A6D12);
+  background-size: 200% 100%;
+  animation: bijou-shine 2.5s linear infinite;
+  color: #201820;
 }

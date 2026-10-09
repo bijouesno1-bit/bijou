@@ -60,6 +60,7 @@ export default function Billet() {
           {t.kind === 'invitation' && <p className="text-sm italic">Invitation : entrée gratuite</p>}
           {qr && <img src={qr} alt="QR code du billet" className="w-56 h-56" />}
           <p className="font-mono text-sm">{refOf(t.requestId)}-{t.seq}</p>
+          {t.kind === 'invitation' && <p className="text-sm">Entrée gratuite</p>}
           <p className="text-sm">{t.holderName} · billet {t.seq}/{t.count}</p>
           {((t.persons ?? 1) > 1 || t.zone) && <p className="text-sm">{[(t.persons ?? 1) > 1 && `Valable pour ${t.persons} personnes`, t.zone].filter(Boolean).join(' · ')}</p>}
           {t.validUntil && <p className="text-xs">Valable jusqu'au {new Date(t.validUntil).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</p>}

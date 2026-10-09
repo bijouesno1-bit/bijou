@@ -167,8 +167,8 @@ export default function Reserver() {
                       <p className="text-xs text-bijou-silver">{left > 0 ? `${left} place${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}` : 'Complet'}{left > 0 && stockInfo(t).label && <span className="ml-2 font-semibold text-bijou-goldlight">{stockInfo(t).label}</span>}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
-                      <p className="text-bijou-goldlight font-semibold whitespace-nowrap">{t.price.toLocaleString('fr-FR')} FCFA</p>
-                      {left > 0 && open !== t.id && <button className={btn + ' py-1 text-sm'} onClick={() => setOpen(t.id)}>Réserver</button>}
+                      {t.kind === 'invitation' ? <p className="text-bijou-goldlight font-semibold whitespace-nowrap">Entrée gratuite</p> : <p className="text-bijou-goldlight font-semibold whitespace-nowrap">{t.price.toLocaleString('fr-FR')} FCFA</p>}
+                      {t.kind !== 'invitation' && left > 0 && open !== t.id && <button className={btn + ' py-1 text-sm'} onClick={() => setOpen(t.id)}>Réserver</button>}
                     </div>
                   </div>
                   {open === t.id && left > 0 && <ReserveForm eventId={ev.id} tt={t} left={left} ready={ready} onClose={() => setOpen('')} />}

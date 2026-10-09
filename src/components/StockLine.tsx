@@ -15,7 +15,7 @@ export function StockLine({ t }: Props) {
   return (
     <div className="text-sm">
       <p>
-        • {t.name} : {t.price.toLocaleString('fr-FR')} FCFA · {s.sold}/{t.quantity} vendus ({s.rate} %)
+        • {t.name} : {t.price === 0 ? 'Gratuit' : t.price.toLocaleString('fr-FR') + ' FCFA'} · {s.sold}/{t.quantity} {t.price === 0 ? 'émis' : 'vendus'} ({s.rate} %)
       </p>
       <p className="ml-3 text-bijou-silver">
         Bloquées : {s.held} · Libres : {s.left}

@@ -31,6 +31,7 @@ service cloud.firestore {
         && d.paymentMethod in pay.get('methods', ['cash','virement','airtel','moov','autre'])
         && d.quantity is int && d.quantity >= 1 && d.quantity <= 10
         && tt.active == true
+        && tt.get('kind', '') != 'invitation'
         && d.eventId == tt.eventId
         && get(/databases/$(database)/documents/events/$(tt.eventId)).data.status == 'published'
         && d.unitPrice == tt.price
@@ -76,6 +77,11 @@ service cloud.firestore {
         && request.resource.data.usedBy == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','usedAt','usedBy']));
       allow delete: if false;
+    }
+    match /batches/{id} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
     }
     match /settings/{id} {
       allow read: if true;

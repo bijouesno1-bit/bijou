@@ -11,10 +11,11 @@ import { addDoc, collection, doc, getDocs, orderBy, query, serverTimestamp, upda
 import { db } from '../lib/firebase'
 import { useAuth } from '../lib/auth'
 import { StockLine } from '../components/StockLine'
+import { FreeIssue } from '../components/FreeIssue'
 import { EventStats } from '../components/EventStats'
 
 type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; status: string }
-type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; active: boolean }
+type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; active: boolean; kind?: string; persons?: number; zone?: string; validUntil?: string | null }
 
 const base = import.meta.env.BASE_URL
 const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory p-5 flex flex-col items-center gap-4'
@@ -63,7 +64,7 @@ function TicketForm({ eventId, onDone }: { eventId: string; onDone: () => void }
     e.preventDefault()
     try {
       await addDoc(collection(db, 'ticketTypes'), {
-        eventId, name: name.trim(), price: Number(price), quantity: Number(qty),
+        eventId, name: name.trim(), price: kind === 'invitation' ? 0 : Number(price), quantity: Number(qty),
         sold: 0, active: true, createdAt: serverTimestamp(),
         kind, persons: kind === 'group' ? Math.min(50, Math.max(2, Number(persons) || 2)) : 1,
         zone: zone.trim().slice(0, 60), validUntil: validUntil || null,
@@ -80,7 +81,7 @@ function TicketForm({ eventId, onDone }: { eventId: string; onDone: () => void }
     <form onSubmit={submit} className="flex flex-col gap-2 border-t border-bijou-gold/20 pt-3">
       <input className={input} placeholder="Catégorie (ex. VIP)" value={name} onChange={e => setName(e.target.value)} required />
       <div className="flex gap-2">
-        <input className={input} type="number" min="0" placeholder="Prix FCFA" value={price} onChange={e => setPrice(e.target.value)} required />
+        {kind !== 'invitation' && <input className={input} type="number" min="0" placeholder="Prix FCFA" value={price} onChange={e => setPrice(e.target.value)} required />}
         <input className={input} type="number" min="1" placeholder="Billets" value={qty} onChange={e => setQty(e.target.value)} required />
       </div>
       <select className={input} value={kind} onChange={e => setKind(e.target.value)}>
@@ -89,7 +90,7 @@ function TicketForm({ eventId, onDone }: { eventId: string; onDone: () => void }
         <option value="vip">VIP</option>
         <option value="premium">Premium</option>
         <option value="group">Groupe (plusieurs personnes)</option>
-        <option value="invitation">Invitation (gratuit : prix 0)</option>
+        <option value="invitation">Billet gratuit (sans prix, émis par l'organisateur)</option>
       </select>
       {kind === 'group' && <input className={input} type="number" min="2" max="50" placeholder="Personnes par billet" value={persons} onChange={e => setPersons(e.target.value)} />}
       <input className={input} placeholder="Zone / rang / table (facultatif)" value={zone} onChange={e => setZone(e.target.value)} />
@@ -176,7 +177,7 @@ function Dashboard() {
           </div>
           <EventStats tickets={tickets.filter(t => t.eventId === ev.id)} />
           {tickets.filter(t => t.eventId === ev.id).map(t => (
-            <StockLine key={t.id} t={t} />
+            <div key={t.id}><StockLine t={t} />{t.kind === 'invitation' && <FreeIssue tt={t} onDone={() => load()} />}</div>
           ))}
           <TicketForm eventId={ev.id} onDone={load} />
           <button className={btn} onClick={() => toggle(ev)}>{ev.status === 'published' ? 'Dépublier' : 'Publier'}</button>

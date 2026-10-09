@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { addDoc, collection, deleteDoc, doc, getDocs, query, serverTimestamp, where } from 'firebase/firestore'
+import { useEffect, useState } from 'react'
+import { addDoc, collection, deleteDoc, doc, getDocs, query, serverTimestamp, updateDoc, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { card, btn } from '../lib/ui'
+import { backfillEventNums, nextEventNum } from '../lib/eventNum'
 
 // [catégorie, prix FCFA, quantité, type, personnes, zone, déjà vendus]
 type T = [string, number, number, string, number?, string?, number?]
@@ -51,6 +52,9 @@ export async function deleteEventDeep(id: string) {
 export function DemoPack() {
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
+  useEffect(() => {
+    backfillEventNums().then(n => { if (n > 0) window.location.reload() }).catch(() => { /* ignoré */ })
+  }, [])
 
   async function load() {
     if (busy) return
@@ -62,8 +66,8 @@ export function DemoPack() {
       let n = 0
       for (const e of DEMO) {
         const ref = await addDoc(collection(db, 'events'), {
-          title: e.title, date: e.date, venue: e.venue, city: e.city, description: e.description,
-          status: 'draft', maxCapacity: e.cap, demo: true, createdAt: serverTimestamp(),
+          num: await nextEventNum(), title: e.title, date: e.date, venue: e.venue, city: e.city, description: e.description,
+          status: new Date(e.date).getTime() > Date.now() ? 'published' : 'draft', maxCapacity: e.cap, demo: true, createdAt: serverTimestamp(),
         })
         for (const [name, price, quantity, kind, persons, zone, sold] of e.t) {
           await addDoc(collection(db, 'ticketTypes'), {
@@ -84,6 +88,27 @@ export function DemoPack() {
       setTimeout(() => window.location.reload(), 800)
     } catch {
       setMsg('Refusé : vérifie ton accès administrateur.')
+      setBusy(false)
+    }
+  }
+
+  async function setPub(pub: boolean) {
+    if (busy) return
+    setBusy(true)
+    setMsg('Mise à jour…')
+    try {
+      const ex = await getDocs(query(collection(db, 'events'), where('demo', '==', true)))
+      let n = 0
+      for (const d of ex.docs) {
+        const dt = String((d.data() as { date?: string }).date ?? '')
+        if (pub && !(new Date(dt).getTime() > Date.now())) continue
+        await updateDoc(d.ref, { status: pub ? 'published' : 'draft' })
+        n++
+      }
+      setMsg(n + ' événement(s) mis à jour. Rechargement…')
+      setTimeout(() => window.location.reload(), 800)
+    } catch {
+      setMsg('Refusé.')
       setBusy(false)
     }
   }
@@ -111,6 +136,10 @@ export function DemoPack() {
       <div className="flex gap-2">
         <button className={btn + ' flex-1'} disabled={busy} onClick={load}>Charger les événements de test</button>
         <button className={btn + ' flex-1 text-bijou-alert'} disabled={busy} onClick={removeAll}>Supprimer tous les tests</button>
+      </div>
+      <div className="flex gap-2">
+        <button className={btn + ' flex-1'} disabled={busy} onClick={() => setPub(true)}>Publier les tests à venir</button>
+        <button className={btn + ' flex-1'} disabled={busy} onClick={() => setPub(false)}>Tout en brouillon</button>
       </div>
       {msg && <p className="text-sm text-bijou-silver">{msg}</p>}
     </div>

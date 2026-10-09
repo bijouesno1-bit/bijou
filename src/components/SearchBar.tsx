@@ -4,8 +4,9 @@ import { collection, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { useAuth } from '../lib/auth'
 import { input } from '../lib/ui'
+import { pad } from '../lib/eventNum'
 
-type Ev = { id: string; title: string; date: string; venue: string; city: string; description?: string; status?: string }
+type Ev = { id: string; num?: number; title: string; date: string; venue: string; city: string; description?: string; status?: string }
 type Rq = { id: string; customerName?: string; phone?: string; email?: string; ticketName?: string; eventId?: string; status?: string }
 
 const norm = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
@@ -81,7 +82,7 @@ export function SearchBar() {
   const evRes = useMemo(() => {
     if (!q.trim()) return []
     return events
-      .filter(e => match(norm([e.title, e.venue, e.city, e.description ?? '', dateText(e.date)].join(' ')), q))
+      .filter(e => match(norm([e.num ? 'n°' + e.num + ' n°' + pad(e.num) + ' ' + e.num : '', e.title, e.venue, e.city, e.description ?? '', dateText(e.date)].join(' ')), q))
       .sort((a, b) => (a.title || '').localeCompare(b.title || '', 'fr', { sensitivity: 'base' }))
       .slice(0, 30)
   }, [events, q])
@@ -99,7 +100,7 @@ export function SearchBar() {
 
   return (
     <>
-      <button aria-label="Rechercher" onClick={() => setOpen(v => !v)} className="p-2 text-bijou-ink">
+      <button aria-label="Rechercher" onClick={() => setOpen(v => !v)} className="shrink-0 p-1.5 text-bijou-ink">
         <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
           <circle cx="11" cy="11" r="7" /><path d="M20 20l-4-4" />
         </svg>
@@ -120,7 +121,7 @@ export function SearchBar() {
               <Link key={e.id} onClick={close}
                 to={isAdmin && e.status !== 'published' ? '/admin?t=evenements' : '/reserver?evenement=' + e.id}
                 className="rounded-xl border border-bijou-gold/40 px-4 py-3 active:scale-95 transition">
-                <p className="font-semibold">{e.title}{e.status && e.status !== 'published' ? <span className="ml-2 text-xs text-bijou-silver">({e.status})</span> : null}</p>
+                <p className="font-semibold">{e.num ? <span className="mr-2 text-xs text-bijou-goldlight">N° {pad(e.num)}</span> : null}{e.title}{e.status && e.status !== 'published' ? <span className="ml-2 text-xs text-bijou-silver">({e.status})</span> : null}</p>
                 <p className="text-sm text-bijou-goldlight">{shortDate(e.date)}</p>
                 <p className="text-sm text-bijou-silver">{e.venue}{e.venue && e.city ? ', ' : ''}{e.city}</p>
               </Link>

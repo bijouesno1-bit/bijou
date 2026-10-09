@@ -65,6 +65,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const items = adminMode ? ADMIN_MENU : PUBLIC_MENU
   const role = isAdmin ? 'Organisateur' : isStaff ? 'Agent' : 'Compte sans accès'
   const photo = user && profile?.photoUrl ? profile.photoUrl : ''
+  const shortName = !user ? '' : (((profile as unknown as { name?: string } | null)?.name ?? '').trim() || (user.email ?? '').split('@')[0]).split(' ')[0]
 
   return (
     <div className="min-h-screen">
@@ -74,20 +75,21 @@ export function Shell({ children }: { children: ReactNode }) {
           <span className="flex flex-col leading-none">
             <span
               className="bg-gradient-to-r from-[#8A6D12] via-bijou-gold to-[#8A6D12] bg-clip-text text-transparent text-xl font-semibold"
-              style={{ fontFamily: "Georgia, 'Times New Roman', serif", letterSpacing: '0.35em' }}
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif", letterSpacing: '0.28em' }}
             >BIJOU</span>
             <span className="mt-1 h-px w-full bg-gradient-to-r from-transparent via-bijou-gold to-transparent" />
           </span>
-          {adminMode && <span className="rounded bg-bijou-navy text-bijou-ivory text-[10px] px-1.5 py-0.5 tracking-widest">ADMIN</span>}
+          {/* badge admin retiré */}
         </Link>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-0.5">
           <SearchBar />
-          <button aria-label="Connexion" onClick={() => setLogin(v => !v)} className="relative p-2 text-bijou-ink">
+          <button aria-label="Connexion" onClick={() => setLogin(v => !v)} className="relative flex shrink-0 flex-col items-center px-0.5 py-1 text-bijou-ink">
             {photo && <Avatar url={photo} size={32} />}
             <svg viewBox="0 0 24 24" className={photo ? 'hidden' : 'h-7 w-7'} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" /><circle cx="12" cy="10" r="3" /><path d="M6 18.5c1-2.8 3.4-4 6-4s5 1.2 6 4" />
             </svg>
-            {user && isStaff && <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-bijou-ok border border-bijou-ivory" />}
+            {user && isStaff && <span className="absolute top-0.5 right-0.5 h-2.5 w-2.5 rounded-full bg-bijou-ok border border-bijou-ivory" />}
+            {user && <span className="mt-0.5 block max-w-[44px] truncate text-[9px] font-medium leading-none text-bijou-ink">{shortName}</span>}
           </button>
           <button aria-label="Menu" onClick={() => setMenu(true)} className="p-2 text-bijou-ink">
             <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">

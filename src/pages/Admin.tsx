@@ -19,6 +19,7 @@ import { AdminTickets } from '../components/AdminTickets'
 import { EventStats } from '../components/EventStats'
 import { EventHistory } from '../components/EventHistory'
 import { DemoPack, deleteEventDeep } from '../components/DemoPack'
+import { nextEventNum } from '../lib/eventNum'
 import { PosterInput } from '../components/PosterInput'
 
 type Ev = { id: string; title: string; date: string; venue: string; city: string; description: string; status: string; maxCapacity?: number | null; poster?: string }
@@ -144,7 +145,7 @@ function Dashboard() {
   async function createEvent(e: FormEvent) {
     e.preventDefault()
     try {
-      await addDoc(collection(db, 'events'), { ...f, title: f.title.trim(), status: 'draft', ...(poster ? { poster } : {}), ...(Number(cap) > 0 ? { maxCapacity: Math.floor(Number(cap)) } : {}), createdAt: serverTimestamp() })
+      await addDoc(collection(db, 'events'), { num: await nextEventNum(), ...f, title: f.title.trim(), status: 'draft', ...(poster ? { poster } : {}), ...(Number(cap) > 0 ? { maxCapacity: Math.floor(Number(cap)) } : {}), createdAt: serverTimestamp() })
       setF({ ...f, title: '', date: '', venue: '', description: '' })
       setCap('')
       setPoster('')

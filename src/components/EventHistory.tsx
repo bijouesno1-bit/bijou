@@ -2,8 +2,9 @@ import { useMemo, useState } from 'react'
 import { collection, getDocs } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { card, input } from '../lib/ui'
+import { pad } from '../lib/eventNum'
 
-type Ev = { id: string; title: string; date: string; venue?: string; city?: string; status?: string }
+type Ev = { id: string; num?: number; title: string; date: string; venue?: string; city?: string; status?: string }
 type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number }
 
 const money = (n: number) => n.toLocaleString('fr-FR') + ' FCFA'
@@ -72,7 +73,7 @@ export function EventHistory() {
                 const rev = tts.reduce((a, t) => a + (t.sold || 0) * (t.price || 0), 0)
                 return (
                   <div key={ev.id} className="rounded-lg border border-bijou-silver/30 bg-black/20 p-3 flex flex-col gap-1">
-                    <p className="font-semibold">{ev.title}</p>
+                    <p className="font-semibold">{ev.num ? <span className="mr-2 text-xs text-bijou-goldlight">N° {pad(ev.num)}</span> : null}{ev.title}</p>
                     <p className="text-sm text-bijou-goldlight capitalize">{fmt(ev.date)}</p>
                     <p className="text-sm text-bijou-silver">{ev.venue}{ev.venue && ev.city ? ', ' : ''}{ev.city}</p>
                     <p className="text-xs text-bijou-silver">{ev.status === 'published' ? 'Publié' : 'Brouillon'}</p>

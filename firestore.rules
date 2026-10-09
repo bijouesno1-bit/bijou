@@ -116,7 +116,11 @@ service cloud.firestore {
         && request.resource.data.result in ['ok','used','bad','unknown']
         && request.resource.data.ticketId is string
         && request.resource.data.ticketId.size() <= 200
-        && request.resource.data.keys().hasOnly(['ticketId','result','by','at','checkpoint','checkpointId']);
+        && request.resource.data.keys().hasOnly(['ticketId','result','by','at','checkpoint','checkpointId','eventId','ticketTypeId','ticketName','free'])
+        && (!('eventId' in request.resource.data) || (request.resource.data.eventId is string && request.resource.data.eventId.size() <= 100))
+        && (!('ticketTypeId' in request.resource.data) || (request.resource.data.ticketTypeId is string && request.resource.data.ticketTypeId.size() <= 100))
+        && (!('ticketName' in request.resource.data) || (request.resource.data.ticketName is string && request.resource.data.ticketName.size() <= 200))
+        && (!('free' in request.resource.data) || request.resource.data.free is bool);
       allow update, delete: if false;
     }
     match /auditLogs/{id} {

@@ -9,7 +9,7 @@ import { sweepExpired } from '../lib/expiry'
 type Req = {
   id: string; eventId: string; ticketTypeId: string; ticketName: string; unitPrice: number; quantity: number; total: number
   customerName: string; phone: string; email?: string; paymentMethod: string; comment?: string
-  status: string; adminNote?: string; createdAt?: Timestamp
+  status: string; paymentStatus?: string; adminNote?: string; createdAt?: Timestamp
 }
 type Log = { id: string; action: string; note?: string; at?: Timestamp }
 
@@ -141,7 +141,7 @@ export function AdminRequests() {
               <div className="flex flex-wrap gap-2">
                 {r.status !== 'approved' && <button className={btnGold} disabled={busy === r.id} onClick={() => decide(r, 'approved')}>Accepter</button>}
                 {r.status !== 'approved' && <button className={btn} disabled={busy === r.id} onClick={() => decide(r, 'info_needed')}>Demander des infos</button>}
-                <button className={btn} disabled={busy === r.id} onClick={() => decide(r, 'refused')}>Refuser</button>
+                {r.paymentStatus !== 'confirmed' && <button className={btn} disabled={busy === r.id} onClick={() => decide(r, 'refused')}>Refuser</button>}
               </div>
             </>
           )}

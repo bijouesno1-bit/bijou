@@ -1,10 +1,16 @@
-import { useEffect, type RefObject } from 'react'
+import { useCallback, useEffect, useRef, type RefObject } from 'react'
 
-// Défilement horizontal automatique.
-// Un toucher / clic / molette arrête tout ; 10 s sans interaction, ça repart.
+// Défilement horizontal automatique avec "stop and go".
+// - Glissement / molette : pause, et ça repart après 10 s sans interaction.
+// - toggle() : 1er appel = centre l'affiche la plus visible et fige ;
+//   2e appel = le défilement repart ; 3e appel = fige à nouveau.
 export function useAutoScroll(ref: RefObject<HTMLDivElement | null>, active: boolean, speed = 50, idleMs = 10000) {
+  const ctl = useRef({ frozen: false, freeze: () => {}, resume: () => {} })
+
   useEffect(() => {
     const el = ref.current
+    const c = ctl.current
+    c.frozen = false
     if (!el || !active) return
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
@@ -18,7 +24,7 @@ export function useAutoScroll(ref: RefObject<HTMLDivElement | null>, active: boo
       const dt = last ? Math.min(t - last, 64) : 0
       last = t
       const max = el.scrollWidth - el.clientWidth
-      if (!paused && max > 0) {
+      if (!paused && !c.frozen && max > 0) {
         pos += (speed * dt) / 1000
         if (pos >= max) pos = 0
         el.scrollLeft = pos
@@ -27,6 +33,7 @@ export function useAutoScroll(ref: RefObject<HTMLDivElement | null>, active: boo
     }
 
     const touch = () => {
+      if (c.frozen) return
       paused = true
       window.clearTimeout(timer)
       timer = window.setTimeout(() => {
@@ -34,6 +41,32 @@ export function useAutoScroll(ref: RefObject<HTMLDivElement | null>, active: boo
         last = 0
         paused = false
       }, idleMs)
+    }
+
+    c.freeze = () => {
+      c.frozen = true
+      window.clearTimeout(timer)
+      const box = el.getBoundingClientRect()
+      let best: Element | null = null
+      let bestV = -1
+      for (const k of Array.from(el.children)) {
+        const r = k.getBoundingClientRect()
+        const v = Math.min(r.right, box.right) - Math.max(r.left, box.left)
+        if (v > bestV) { bestV = v; best = k }
+      }
+      if (best) {
+        const r = best.getBoundingClientRect()
+        const delta = r.left + r.width / 2 - (box.left + box.width / 2)
+        el.scrollTo({ left: el.scrollLeft + delta, behavior: 'smooth' })
+      }
+    }
+
+    c.resume = () => {
+      c.frozen = false
+      paused = false
+      window.clearTimeout(timer)
+      pos = el.scrollLeft
+      last = 0
     }
 
     const evts = ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'wheel'] as const
@@ -44,6 +77,15 @@ export function useAutoScroll(ref: RefObject<HTMLDivElement | null>, active: boo
       cancelAnimationFrame(raf)
       window.clearTimeout(timer)
       evts.forEach(e => el.removeEventListener(e, touch))
+      c.frozen = false
+      c.freeze = () => {}
+      c.resume = () => {}
     }
   }, [ref, active, speed, idleMs])
+
+  return useCallback(() => {
+    const c = ctl.current
+    if (c.frozen) c.resume()
+    else c.freeze()
+  }, [])
 }

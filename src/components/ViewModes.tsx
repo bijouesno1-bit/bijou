@@ -26,7 +26,7 @@ const ICONS: Record<Mode, { label: string; svg: ReactNode }> = {
 
 export function ViewModeBar({ mode, onChange }: { mode: Mode; onChange: (m: Mode) => void }) {
   return (
-    <div className="w-full max-w-md flex justify-end gap-2" role="group" aria-label="Mode d'affichage">
+    <div className="w-full max-w-md flex justify-center gap-2" role="group" aria-label="Mode d'affichage">
       {(['compact', 'medium', 'large'] as Mode[]).map(m => (
         <button key={m} aria-label={ICONS[m].label} aria-pressed={mode === m} onClick={() => onChange(m)}
           className={'rounded-lg border p-1.5 active:scale-95 transition ' + (mode === m ? 'border-bijou-gold text-bijou-goldlight bg-bijou-gold/10' : 'border-bijou-silver/30 text-bijou-silver')}>

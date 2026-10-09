@@ -29,10 +29,10 @@ const num = (ev: Ev) => (ev.num ? 'N° ' + pad(ev.num) : '')
 export default function Annonces() {
   const [events, setEvents] = useState<Ev[]>([])
   const [state, setState] = useState<'loading' | 'ok' | 'error'>('loading')
-  const [mode, setMode] = useViewMode('annonces')
+  const [mode, setMode] = useViewMode('annonces2')
   const [openId, setOpenId] = useState('')
   const rail = useRef<HTMLDivElement>(null)
-  useAutoScroll(rail, state === 'ok' && events.length > 1 && mode === 'large')
+  const toggleScroll = useAutoScroll(rail, state === 'ok' && events.length > 1 && mode === 'large')
 
   useEffect(() => {
     (async () => {
@@ -63,10 +63,10 @@ export default function Annonces() {
       {state === 'ok' && events.length === 0 && <p className="text-bijou-silver text-center">Aucun événement à venir pour le moment.</p>}
 
       {has && mode === 'large' && (
-        <div ref={rail} className="flex w-full gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none' }}>
+        <div ref={rail} onClick={e => { if (!(e.target as HTMLElement).closest("a,button")) toggleScroll() }} className="flex w-full gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none' }}>
           {events.map(ev => (
             <div key={ev.id} className={card + ' shrink-0 w-[85%] max-w-sm'}>
-              {ev.poster && <img src={posterUrl(ev.poster, 800)} alt={ev.title} loading="lazy" className="w-full rounded-lg object-contain bg-black/30" />}
+              {ev.poster && <img src={posterUrl(ev.poster, 800)} alt={ev.title} loading="eager" className="w-full rounded-lg object-contain bg-black/30" />}
               <div className="text-center">
                 <p className="text-xs text-bijou-silver">{num(ev)}</p>
                 <p className="text-lg font-semibold">{ev.title}</p>
@@ -100,21 +100,21 @@ export default function Annonces() {
       )}
 
       {has && mode === 'compact' && (
-        <div className="w-full max-w-md flex flex-col gap-2">
+        <div className="w-full max-w-md flex flex-col gap-1.5">
           {events.map(ev => {
             const on = openId === ev.id
             return (
               <div key={ev.id} className="rounded-xl border border-bijou-gold/40 bg-white/5">
-                <button onClick={() => setOpenId(o => (o === ev.id ? '' : ev.id))} aria-expanded={on} className="flex w-full items-center gap-3 px-3 py-2 text-left">
-                  <span className="w-14 shrink-0 text-xs text-bijou-goldlight">{num(ev) || '—'}</span>
+                <button onClick={() => setOpenId(o => (o === ev.id ? '' : ev.id))} aria-expanded={on} className="flex w-full items-center gap-2 px-2 py-1 text-left">
+                  <span className="w-10 shrink-0 text-[10px] text-bijou-goldlight">{num(ev) || '—'}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold">{ev.title}</span>
-                    <span className="block text-xs text-bijou-silver">{dShort(ev.date)} · {hShort(ev.date)} · {ev.city}</span>
+                    <span className="block truncate text-sm font-semibold">{ev.title}</span>
+                    <span className="block text-[11px] text-bijou-silver">{dShort(ev.date)} · {hShort(ev.date)} · {ev.city}</span>
                   </span>
-                  <svg viewBox="0 0 24 24" className={'h-5 w-5 shrink-0 text-bijou-goldlight transition-transform ' + (on ? 'rotate-180' : '')} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
+                  <svg viewBox="0 0 24 24" className={'h-4 w-4 shrink-0 text-bijou-goldlight transition-transform ' + (on ? 'rotate-180' : '')} fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg>
                 </button>
                 {on && (
-                  <div className="flex flex-col gap-2 border-t border-bijou-gold/20 px-3 py-3">
+                  <div className="flex flex-col gap-2 border-t border-bijou-gold/20 px-2 py-2">
                     <p className="text-sm text-bijou-goldlight capitalize">{fmtDate(ev.date)}</p>
                     <p className="text-sm text-bijou-silver">{ev.venue}, {ev.city}</p>
                     {ev.description && <p className="text-sm">{ev.description}</p>}

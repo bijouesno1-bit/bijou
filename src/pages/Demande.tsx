@@ -1,3 +1,4 @@
+import { bg, card, btn } from '../lib/ui'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { doc, getDoc } from 'firebase/firestore'
@@ -11,9 +12,6 @@ type Req = {
 }
 
 const base = import.meta.env.BASE_URL
-const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory p-5 flex flex-col items-center gap-4'
-const card = 'w-full max-w-md rounded-xl border border-bijou-gold/40 bg-white/5 p-4 flex flex-col gap-3'
-const btn = 'rounded-xl border border-bijou-gold/60 px-4 py-2 font-medium active:scale-95 transition text-center'
 
 const MESSAGE: Record<string, string> = {
   pending: "Ta demande a bien été reçue. Elle attend la décision de l'organisateur. Ce n'est pas encore un billet.",

@@ -1,3 +1,4 @@
+import { bg, card, btn, btnGold, input } from '../lib/ui'
 import { stockInfo } from '../lib/stock'
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -10,11 +11,6 @@ type Ev = { id: string; title: string; date: string; venue: string; city: string
 type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; kind?: string; persons?: number; zone?: string; validUntil?: string | null }
 
 const base = import.meta.env.BASE_URL
-const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory p-5 flex flex-col items-center gap-4'
-const card = 'w-full max-w-md rounded-xl border border-bijou-gold/40 bg-white/5 p-4 flex flex-col gap-3'
-const btn = 'rounded-xl border border-bijou-gold/60 px-4 py-2 font-medium active:scale-95 transition text-center'
-const btnGold = 'rounded-xl bg-bijou-gold text-bijou-ink px-4 py-2 font-semibold active:scale-95 transition'
-const input = 'w-full rounded-lg bg-black/40 border border-bijou-silver/40 px-3 py-2 text-bijou-ivory'
 
 function fmtDate(d: string) {
   if (!d) return ''

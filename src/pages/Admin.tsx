@@ -1,3 +1,4 @@
+import { bg, card, btn, btnGold, input } from '../lib/ui'
 import { useCallback, useEffect, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { AdminPaymentSettings } from '../components/AdminPaymentSettings'
@@ -20,11 +21,6 @@ type Ev = { id: string; title: string; date: string; venue: string; city: string
 type Tt = { id: string; eventId: string; name: string; price: number; quantity: number; sold: number; reserved?: number; active: boolean; kind?: string; persons?: number; zone?: string; validUntil?: string | null }
 
 const base = import.meta.env.BASE_URL
-const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory p-5 flex flex-col items-center gap-4'
-const card = 'w-full max-w-md rounded-xl border border-bijou-gold/40 bg-white/5 p-4 flex flex-col gap-3'
-const input = 'w-full rounded-lg bg-black/40 border border-bijou-silver/40 px-3 py-2 text-bijou-ivory'
-const btn = 'rounded-xl border border-bijou-gold/60 px-4 py-2 font-medium active:scale-95 transition text-center'
-const btnGold = 'rounded-xl bg-bijou-gold text-bijou-ink px-4 py-2 font-semibold active:scale-95 transition'
 
 function Header({ title }: { title: string }) {
   return (
@@ -203,7 +199,7 @@ function Dashboard() {
       ))}
 
       <button className={btn} onClick={logout}>Se déconnecter</button>
-      <Link to="/" className={btn}>Retour à l'accueil</Link>
+      <Link to="/" className={btn + ' w-full max-w-md'}>Retour à l'accueil</Link>
     </div>
   )
 }
@@ -221,7 +217,7 @@ function Login() {
     <div className={bg}>
       <Header title="Espace organisateur" />
       <LoginForm />
-      <Link to="/" className={btn}>Retour à l'accueil</Link>
+      <Link to="/" className={btn + ' w-full max-w-md'}>Retour à l'accueil</Link>
     </div>
   )
 }

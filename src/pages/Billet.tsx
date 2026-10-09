@@ -4,12 +4,13 @@ import { doc, getDoc } from 'firebase/firestore'
 import * as QRCode from 'qrcode'
 import { db } from '../lib/firebase'
 import { refOf } from '../lib/requests'
+import { pad } from '../lib/eventNum'
 import { Venues } from '../components/Venues'
 import { KIND_CARD, KIND_LABEL, KIND_PLAIN } from '../lib/kinds'
 
 type Tk = {
   requestId: string; ticketName: string; eventTitle: string; eventDate: string
-  venue: string; city: string; holderName: string; seq: number; count: number; status: string; persons?: number; zone?: string; validUntil?: string | null; kind?: string
+  venue: string; city: string; holderName: string; seq: number; count: number; status: string; persons?: number; zone?: string; validUntil?: string | null; kind?: string; eventId?: string
 }
 
 const base = import.meta.env.BASE_URL
@@ -28,6 +29,7 @@ export default function Billet() {
   const { token } = useParams()
   const [t, setT] = useState<Tk | null>(null)
   const [qr, setQr] = useState('')
+  const [evNum, setEvNum] = useState(0)
   const [now, setNow] = useState(new Date())
   useEffect(() => { const i = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(i) }, [])
   const [state, setState] = useState<'loading' | 'ok' | 'missing' | 'error'>('loading')
@@ -37,7 +39,14 @@ export default function Billet() {
       try {
         const s = await getDoc(doc(db, 'tickets', token ?? '_'))
         if (!s.exists()) { setState('missing'); return }
-        setT(s.data() as Tk)
+        const tk = s.data() as Tk
+        setT(tk)
+        if (tk.eventId) {
+          try {
+            const e = await getDoc(doc(db, 'events', tk.eventId))
+            setEvNum(Number((e.data() as { num?: number } | undefined)?.num ?? 0))
+          } catch { /* ignoré */ }
+        }
         setQr(await QRCode.toDataURL('BIJOU:' + (token ?? ''), { width: 360, margin: 2, errorCorrectionLevel: 'M' }))
         setState('ok')
       } catch { setState('error') }
@@ -54,6 +63,7 @@ export default function Billet() {
           <div aria-hidden="true" className="pointer-events-none absolute -inset-1/2 -z-10 opacity-[0.09] -rotate-[25deg]" style={{ backgroundImage: "url(" + base + "brand/logo-clair.svg)", backgroundSize: "140px auto", backgroundRepeat: "repeat" }} />
           <img src={`${base}brand/logo-clair.svg`} alt="BIJOU" className="w-40" />
           <p className="text-xs uppercase tracking-widest opacity-60">Billet authentique</p>
+          {evNum > 0 && <p className="font-mono text-sm font-semibold tracking-widest">N° {pad(evNum)}</p>}
           <h1 className="text-xl font-bold text-center">{t.eventTitle}</h1>
           <p className="text-sm text-center capitalize">{fmt(t.eventDate)}</p>
           <p className="text-sm text-center">{t.venue}, {t.city}</p>

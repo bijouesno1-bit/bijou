@@ -2,3 +2,4 @@
 @tailwind components;
 @tailwind utilities;
 body{margin:0;background:#07070C;font-family:system-ui,sans-serif}
+main p:not([class*="text-center"]):not([class*="text-right"]) { text-align: justify; hyphens: auto; -webkit-hyphens: auto }

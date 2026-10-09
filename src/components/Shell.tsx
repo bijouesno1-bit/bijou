@@ -34,25 +34,25 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen">
-      <header className="print:hidden fixed top-0 inset-x-0 z-40 h-14 bg-bijou-ink/95 backdrop-blur border-b border-bijou-gold/20 flex items-center justify-between px-3">
+      <header className="print:hidden fixed top-0 inset-x-0 z-40 h-14 bg-bijou-ivory border-b border-bijou-gold/40 shadow-sm flex items-center justify-between px-3">
         <Link to="/" className="flex items-center gap-2">
           <img src={`${base}brand/icon.svg`} alt="" className="h-8 w-8" />
           <span className="flex flex-col leading-none">
             <span
-              className="bg-gradient-to-r from-bijou-gold via-bijou-goldlight to-bijou-gold bg-clip-text text-transparent text-xl font-semibold"
+              className="bg-gradient-to-r from-[#8A6D12] via-bijou-gold to-[#8A6D12] bg-clip-text text-transparent text-xl font-semibold"
               style={{ fontFamily: "Georgia, 'Times New Roman', serif", letterSpacing: '0.35em' }}
             >BIJOU</span>
             <span className="mt-1 h-px w-full bg-gradient-to-r from-transparent via-bijou-gold to-transparent" />
           </span>
         </Link>
         <div className="flex items-center gap-1">
-          <button aria-label="Connexion" onClick={() => setLogin(v => !v)} className="relative p-2 text-bijou-goldlight">
+          <button aria-label="Connexion" onClick={() => setLogin(v => !v)} className="relative p-2 text-bijou-ink">
             <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="12" cy="12" r="10" /><circle cx="12" cy="10" r="3" /><path d="M6 18.5c1-2.8 3.4-4 6-4s5 1.2 6 4" />
             </svg>
-            {user && isStaff && <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-bijou-ok border border-bijou-ink" />}
+            {user && isStaff && <span className="absolute top-1.5 right-1.5 h-2.5 w-2.5 rounded-full bg-bijou-ok border border-bijou-ivory" />}
           </button>
-          <button aria-label="Menu" onClick={() => setMenu(true)} className="p-2 text-bijou-goldlight">
+          <button aria-label="Menu" onClick={() => setMenu(true)} className="p-2 text-bijou-ink">
             <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
               <path d="M4 7h16M4 12h16M4 17h16" />
             </svg>

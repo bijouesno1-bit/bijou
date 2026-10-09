@@ -163,7 +163,7 @@ export default function Reserver() {
                   <div className="flex justify-between items-center gap-2">
                     <div>
                       <p className="font-medium">{t.name}</p>
-                      {((t.persons ?? 1) > 1 || t.zone || t.price === 0) && <p className="text-xs text-bijou-goldlight">{[(t.persons ?? 1) > 1 && `Valable pour ${t.persons} personnes`, t.zone, t.price === 0 && 'Gratuit sur validation'].filter(Boolean).join(' · ')}</p>}
+                      {((t.persons ?? 1) > 1 || t.zone || (t.price === 0 && t.kind !== 'invitation')) && <p className="text-xs text-bijou-goldlight">{[(t.persons ?? 1) > 1 && `Valable pour ${t.persons} personnes`, t.zone, t.price === 0 && t.kind !== 'invitation' && 'Gratuit sur validation'].filter(Boolean).join(' · ')}</p>}
                       <p className="text-xs text-bijou-silver">{left > 0 ? `${left} place${left > 1 ? 's' : ''} restante${left > 1 ? 's' : ''}` : 'Complet'}{left > 0 && stockInfo(t).label && <span className="ml-2 font-semibold text-bijou-goldlight">{stockInfo(t).label}</span>}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1">

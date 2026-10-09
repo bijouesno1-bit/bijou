@@ -6,6 +6,10 @@ import Demande from './pages/Demande'
 import Reserver from './pages/Reserver'
 import Admin from './pages/Admin'
 import Lot from './pages/Lot'
+import Aide from './pages/Aide'
+import Apropos from './pages/Apropos'
+import Lieux from './pages/Lieux'
+import { Shell } from './components/Shell'
 
 const base = import.meta.env.BASE_URL
 const bg = 'min-h-screen bg-gradient-to-br from-[#07070C] to-bijou-navy text-bijou-ivory flex flex-col items-center justify-center gap-5 p-6'
@@ -27,6 +31,7 @@ function Home() {
     <div className={bg}>
       <img src={`${base}brand/logo-sombre.svg`} alt="BIJOU - Le billet authentique, l'entrée sécurisée" className="w-full max-w-sm" />
       <Link to="/reserver" className={btn}>Réserver un billet</Link>
+      <Link to="/aide" className={btn}>Comment ça marche</Link>
       <Link to="/scan" className={btn}>Contrôle d'accès (agents)</Link>
       <Link to="/admin" className={btn}>Espace organisateur</Link>
     </div>
@@ -35,6 +40,7 @@ function Home() {
 
 export default function App() {
   return (
+    <Shell>
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/reserver" element={<Reserver />} />
@@ -43,7 +49,11 @@ export default function App() {
       <Route path="/scan" element={<Scan />} />
       <Route path="/admin" element={<Admin />} />
       <Route path="/lot/:id" element={<Lot />} />
+      <Route path="/aide" element={<Aide />} />
+      <Route path="/apropos" element={<Apropos />} />
+      <Route path="/lieux" element={<Lieux />} />
       <Route path="*" element={<Page title="Page introuvable" />} />
     </Routes>
+    </Shell>
   )
 }

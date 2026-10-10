@@ -1,7 +1,7 @@
 import { bg, card, btn, btnGold } from '../lib/ui'
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { doc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore'
+import { doc, getDoc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 import { PAY_LABEL, STATUS_LABEL, refOf } from '../lib/requests'
 
@@ -53,20 +53,13 @@ export default function Demande() {
 
   const paid = r?.paymentStatus === 'confirmed'
 
+  const live = !!r && !paid && ((r.status === 'pending' && !!r.waSent) || r.status === 'approved')
   useEffect(() => {
-    if (!id || !r || paid) return
-    if (!((r.status === 'pending' && r.waSent) || r.status === 'approved')) return
-    const t0 = Date.now()
-    const t = setInterval(async () => {
-      if (document.hidden) return
-      if (Date.now() - t0 > 30 * 60000) { clearInterval(t); return }
-      try {
-        const s = await getDoc(doc(db, 'requests', id))
-        if (s.exists()) setR({ id: s.id, ...(s.data() as Omit<Req, 'id'>) })
-      } catch { /* ignore */ }
-    }, 60000)
-    return () => clearInterval(t)
-  }, [id, r?.status, r?.waSent, paid])
+    if (!id || !live) return
+    return onSnapshot(doc(db, 'requests', id), s => {
+      if (s.exists()) setR({ id: s.id, ...(s.data() as Omit<Req, 'id'>) })
+    }, () => { /* droits ou réseau : on ignore */ })
+  }, [id, live])
   const validateUrl = r ? window.location.origin + window.location.pathname + '#/valider/' + r.id : ''
   const waLink = r && orgWa
     ? 'https://wa.me/' + orgWa + '?text=' + encodeURIComponent(

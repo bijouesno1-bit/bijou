@@ -52,10 +52,22 @@ export default function Valider() {
         'BIJOU ' + refOf(r.id) + '\nBonjour ' + r.customerName + ', ton paiement est validé. Voici ton billet :\n' + (r.ticketTokens ?? []).map((tk, i) => ((r.ticketTokens ?? []).length > 1 ? 'Billet ' + (i + 1) + '/' + (r.ticketTokens ?? []).length + ' : ' : '') + window.location.origin + window.location.pathname + '#/billet/' + tk).join('\n') + '\nSuivi de ta demande : ' + trackUrl)
     : ''
 
+  function waFor(tokens: string[], evLine: string) {
+    if (!r || !clientDigits || tokens.length === 0) return ''
+    const root = window.location.origin + window.location.pathname
+    const lines = tokens.map((tk, i) => (tokens.length > 1 ? 'Billet ' + (i + 1) + '/' + tokens.length + ' : ' : 'Ton billet : ') + root + '#/billet/' + tk)
+    return 'https://wa.me/' + clientDigits + '?text=' + encodeURIComponent(
+      'BIJOU ' + refOf(r.id) + '\nBonjour ' + r.customerName + ', ton paiement est validé.\n' +
+      (evLine ? evLine + '\n' : '') + r.quantity + ' x ' + r.ticketName + '\n\n' +
+      lines.join('\n') + '\n\nPrésente le QR code à l\'entrée. Suivi : ' + trackUrl)
+  }
+
   async function validate() {
     if (!user || !r || busy) return
     setBusy(true); setErr('')
     try {
+      let issued: string[] = []
+      let evLine = ''
       await runTransaction(db, async tx => {
         const rRef = doc(db, 'requests', r.id)
         const rs = await tx.get(rRef)
@@ -86,6 +98,8 @@ export default function Valider() {
             status: 'valid', createdAt: serverTimestamp(),
           })
         }
+        issued = tokens
+        evLine = ev.title + ' · ' + ev.date + ' · ' + ev.venue + ', ' + ev.city
         tx.update(tRef, cur.status === 'approved'
           ? { sold: t.sold + cur.quantity, reserved: Math.max(0, (t.reserved ?? 0) - cur.quantity) }
           : { sold: t.sold + cur.quantity })
@@ -96,6 +110,8 @@ export default function Valider() {
       addDoc(collection(db, 'auditLogs'), { requestId: r.id, action: 'paid', note: txRef.trim().slice(0, 60), by: user.uid, at: serverTimestamp() }).catch(() => {})
       setDone('Réservation validée : les billets sont émis. Envoie-lui maintenant ses billets sur WhatsApp.')
       await load()
+      const u = waFor(issued, evLine)
+      if (u) window.location.href = u
     } catch (x) {
       setErr(x instanceof Error && !('code' in x) ? x.message : 'Validation refusée par le serveur.')
     }

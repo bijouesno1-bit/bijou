@@ -1,3 +1,4 @@
+import { OrgPaySettings } from '../components/OrgPaySettings'
 import { TicketHistory } from '../components/TicketHistory'
 import { OrgTeam } from '../components/OrgTeam'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
@@ -206,6 +207,7 @@ function Dashboard() {
       </form>
 
       {mine.length > 0 && <MyAnnonces labels={STATUS} />}
+      <OrgPaySettings />
       <OrgTeam />
       <TicketHistory mode="organizer" />
     </>

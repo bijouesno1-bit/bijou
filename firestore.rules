@@ -21,13 +21,15 @@ service cloud.firestore {
       function validRequest() {
       let d = request.resource.data;
       let tt = get(/databases/$(database)/documents/ticketTypes/$(d.ticketTypeId)).data;
-      let pay = get(/databases/$(database)/documents/settings/payment).data;
-      return exists(/databases/$(database)/documents/settings/payment)
+      let ownerId = d.get('ownerId', '');
+      let pay = ownerId == '' ? get(/databases/$(database)/documents/settings/payment).data : get(/databases/$(database)/documents/orgPayment/$(ownerId)).data;
+      return (ownerId == '' ? exists(/databases/$(database)/documents/settings/payment) : exists(/databases/$(database)/documents/orgPayment/$(ownerId)))
         && pay.get('organizerWa', '') is string
         && pay.get('organizerWa', '').size() >= 8
-        && d.keys().hasOnly(['eventId','ticketTypeId','ticketName','unitPrice','quantity','total','customerName','phone','email','paymentMethod','comment','status','createdAt'])
+        && d.keys().hasOnly(['eventId','ticketTypeId','ticketName','unitPrice','quantity','total','customerName','phone','email','paymentMethod','comment','status','createdAt','ownerId'])
         && d.keys().hasAll(['eventId','ticketTypeId','ticketName','unitPrice','quantity','total','customerName','phone','paymentMethod','status','createdAt'])
         && d.status == 'pending'
+        && get(/databases/$(database)/documents/events/$(tt.eventId)).data.get('ownerId', '') == ownerId
         && d.createdAt == request.time
         && d.customerName is string && d.customerName.size() >= 2 && d.customerName.size() <= 80
         && d.phone is string && d.phone.size() >= 6 && d.phone.size() <= 20
@@ -125,6 +127,10 @@ service cloud.firestore {
             || (resource.data.status == 'hidden' && resource.data.get('hiddenFrom', '') == 'owner')));
       }
     match /ticketTypes/{id} {
+      allow update: if isOrganizer()
+        && get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.get('ownerId', '') == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['sold','reserved'])
+        && request.resource.data.sold >= resource.data.sold;
       allow read: if resource.data.active == true || isAdmin();
       allow write: if isAdmin();
     }
@@ -132,6 +138,17 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isAdmin();
       allow create: if validRequest();
+      allow update: if resource.data.status == 'pending'
+        && resource.data.get('waSent', false) == false
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['waSent','waSentAt'])
+        && request.resource.data.waSent == true
+        && request.resource.data.waSentAt == request.time;
+      allow update: if isOrganizer()
+        && resource.data.get('ownerId', '') == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','paymentStatus','paymentRef','ticketTokens','paidAt','paidBy','adminNote','decidedAt'])
+        && (request.resource.data.get('paymentStatus', '') != 'confirmed'
+            || resource.data.get('waSent', false) == true
+            || resource.data.status == 'approved');
       allow update: if isAdmin();
       allow delete: if false;
     }
@@ -163,6 +180,14 @@ service cloud.firestore {
         && request.resource.data.status == 'used'
         && request.resource.data.usedBy == request.auth.uid
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','usedAt','usedBy']));
+      allow create: if isOrganizer()
+        && request.resource.data.keys().hasOnly(['requestId','eventId','ticketTypeId','eventTitle','eventDate','venue','city','ticketName','holderName','seq','count','price','persons','zone','validUntil','kind','status','createdAt'])
+        && request.resource.data.status == 'valid'
+        && request.resource.data.createdAt == request.time
+        && get(/databases/$(database)/documents/requests/$(request.resource.data.requestId)).data.get('ownerId', '') == request.auth.uid
+        && get(/databases/$(database)/documents/requests/$(request.resource.data.requestId)).data.eventId == request.resource.data.eventId
+        && (get(/databases/$(database)/documents/requests/$(request.resource.data.requestId)).data.get('waSent', false) == true
+            || get(/databases/$(database)/documents/requests/$(request.resource.data.requestId)).data.status == 'approved');
       allow delete: if isAdmin();
     }
     match /batches/{id} {
@@ -186,6 +211,10 @@ service cloud.firestore {
         && (request.resource.data.lng == null || request.resource.data.lng is number)
         && request.resource.data.active is bool;
       allow delete: if isAdmin();
+    }
+    match /orgPayment/{uid} {
+      allow get: if true;
+      allow write: if signedIn() && request.auth.uid == uid && (isOrganizer() || isAdmin());
     }
     match /settings/{id} {
       allow read: if true;

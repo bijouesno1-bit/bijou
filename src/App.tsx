@@ -3,6 +3,7 @@ import { Link, Route, Routes } from 'react-router-dom'
 import Scan from './pages/Scan'
 import Billet from './pages/Billet'
 import Demande from './pages/Demande'
+import Valider from './pages/Valider'
 import Reserver from './pages/Reserver'
 import Admin from './pages/Admin'
 import Organisateur from './pages/Organisateur'
@@ -53,6 +54,7 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/reserver" element={<Reserver />} />
       <Route path="/demande/:id" element={<Demande />} />
+      <Route path="/valider/:id" element={<Valider />} />
       <Route path="/billet/:token" element={<Billet />} />
       <Route path="/scan" element={<Scan />} />
       <Route path="/admin" element={<Admin />} />

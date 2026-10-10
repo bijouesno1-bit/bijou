@@ -27,6 +27,12 @@ function dShort(d: string) {
   return !d || isNaN(x.getTime()) ? '' : x.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) + ' · ' + x.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
+async function payDoc(eventId: string) {
+  const e = await getDoc(doc(db, 'events', eventId))
+  const owner = e.exists() ? String((e.data() as { ownerId?: string }).ownerId ?? '') : ''
+  return getDoc(doc(db, owner ? 'orgPayment' : 'settings', owner || 'payment'))
+}
+
 function ReserveForm({ eventId, tt, left, ready, onClose }: { eventId: string; tt: Tt; left: number; ready: boolean; onClose: () => void }) {
   const nav = useNavigate()
   const [name, setName] = useState('')
@@ -35,8 +41,14 @@ function ReserveForm({ eventId, tt, left, ready, onClose }: { eventId: string; t
   const [qty, setQty] = useState(1)
   const [pay, setPay] = useState('cash')
   const [allowed, setAllowed] = useState<string[]>(Object.keys(PAY_LABEL))
+  const [orgReady, setOrgReady] = useState(false)
   useEffect(() => {
-    getDoc(doc(db, 'settings', 'payment'))
+    payDoc(eventId)
+      .then(s => { const d = s.data() as { organizerWa?: string } | undefined; setOrgReady(!!d && String(d.organizerWa ?? '').replace(/\D/g, '').length >= 8) })
+      .catch(() => setOrgReady(false))
+  }, [eventId])
+  useEffect(() => {
+    payDoc(eventId)
       .then(s => {
         const m = (s.data() as { methods?: string[] } | undefined)?.methods
         if (Array.isArray(m)) {
@@ -61,7 +73,10 @@ function ReserveForm({ eventId, tt, left, ready, onClose }: { eventId: string; t
     if (Date.now() - last < 60000) { setErr('Patiente une minute avant une nouvelle demande.'); return }
     setBusy(true)
     try {
+      const evs = await getDoc(doc(db, 'events', eventId))
+      const ownerId = evs.exists() ? String((evs.data() as { ownerId?: string }).ownerId ?? '') : ''
       const ref = await addDoc(collection(db, 'requests'), {
+        ...(ownerId ? { ownerId } : {}),
         eventId,
         ticketTypeId: tt.id,
         ticketName: tt.name,
@@ -105,7 +120,8 @@ function ReserveForm({ eventId, tt, left, ready, onClose }: { eventId: string; t
       <p className="text-xs text-bijou-silver">Ta demande sera examinée par l'organisateur. Aucun billet n'est émis avant son accord et la confirmation du paiement.</p>
       {!ready && <p className="text-bijou-alert text-sm">Les réservations ne sont pas encore ouvertes.</p>}
       {err && <p className="text-bijou-alert text-sm">{err}</p>}
-      <button className={btnGold} disabled={busy || !ready}>{busy ? 'Envoi…' : 'Envoyer ma demande'}</button>
+      <button className={btnGold} disabled={busy || !ready || !orgReady}>{busy ? 'Envoi…' : 'Envoyer ma demande'}</button>
+      {!orgReady && <p className="text-sm text-bijou-alert">Réservation indisponible : l'organisateur n'a pas encore renseigné ses numéros de paiement.</p>}
       <button type="button" className={btn} onClick={onClose}>Annuler</button>
     </form>
   )

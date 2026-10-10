@@ -119,10 +119,12 @@ function ReserveForm({ eventId, tt, left, ready, onClose }: { eventId: string; t
           {Array.from({ length: max }, (_, i) => i + 1).map(n => <option key={n} value={n}>{n} billet{n > 1 ? 's' : ''}</option>)}
         </select>
         <select className={input} value={pay} onChange={e => setPay(e.target.value)}>
-          {allowed.filter(k => k in PAY_LABEL).length === 0
-            ? <option value="">Aucun moyen de paiement disponible</option>
-            : allowed.filter(k => k in PAY_LABEL).map(k => <option key={k} value={k}>{PAY_LABEL[k]}</option>)}
+          {[...['cash', 'airtel', 'moov'], ...allowed.filter(k => k in PAY_LABEL && !['cash', 'airtel', 'moov'].includes(k))].map(k => {
+            const ok = allowed.includes(k)
+            return <option key={k} value={k} disabled={!ok}>{PAY_LABEL[k] + (ok ? '' : ' (indisponible)')}</option>
+          })}
         </select>
+        {allowed.length === 0 && <p className="text-sm text-bijou-alert">Aucun moyen de paiement n'est disponible pour cet événement.</p>}
       </div>
       <textarea className={input} rows={2} placeholder="Commentaire (facultatif)" value={comment} onChange={e => setComment(e.target.value)} maxLength={300} />
       <input value={hp} onChange={e => setHp(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden="true" className="hidden" />

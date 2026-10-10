@@ -1,3 +1,4 @@
+import { EventQr } from '../components/EventQr'
 import { AdminEv, AdminModes } from '../components/AdminEv'
 import type { Mode } from '../components/ViewModes'
 import { pad } from '../lib/eventNum'
@@ -214,6 +215,7 @@ function Dashboard() {
             <button className={btn} onClick={() => setMax(ev)}>Capacité</button>
           </div>
           <PosterInput url={ev.poster ?? ''} onChange={u => setEventPoster(ev, u)} compact />
+          <EventQr ev={ev} />
           <EventStats tickets={tickets.filter(t => t.eventId === ev.id)} />
           <AdminTickets eventId={ev.id} onDone={load} />
           {tickets.filter(t => t.eventId === ev.id).map(t => (

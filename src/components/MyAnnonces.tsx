@@ -1,3 +1,4 @@
+import { EventQr } from './EventQr'
 import { deleteEventTeam } from '../lib/eventCascade'
 import { useCallback, useEffect, useState } from 'react'
 import { collection, deleteDoc, doc, getDocs, query, updateDoc, where, type DocumentData } from 'firebase/firestore'
@@ -61,6 +62,7 @@ export function MyAnnonces({ labels }: { labels?: Record<string, string> }) {
               {canDelete && <button className={btn + small} onClick={() => remove(m)}>Supprimer</button>}
             </div>
             {m.status === 'published' && <div className="text-xs text-bijou-silver">Pour supprimer une annonce publiée, masquez-la d'abord.</div>}
+            {m.status === 'published' && <EventQr ev={m} />}
             {edit === m.id && <EventEditor ev={m} onDone={ok => { setEdit(''); if (ok) load() }} />}
           </div>
         )

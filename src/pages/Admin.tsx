@@ -8,6 +8,7 @@ import { AdminPaymentSettings } from '../components/AdminPaymentSettings'
 import { AdminDashboard } from '../components/AdminDashboard'
 import { AdminRequests } from '../components/AdminRequests'
 import { AdminAnnonces } from '../components/AdminAnnonces'
+import { AdminManage } from '../components/AdminManage'
 import { AdminAgents } from '../components/AdminAgents'
 import { AdminCheckpoints } from '../components/AdminCheckpoints'
 import { LoginForm } from '../components/LoginForm'
@@ -176,7 +177,7 @@ function Dashboard() {
       {t === 'tableau' && <AdminDashboard />}
       {t === 'reglages' && <AdminPaymentSettings />}
       {t === 'demandes' && <AdminRequests />}
-      {t === 'annonces' && <AdminAnnonces />}
+      {t === 'annonces' && <><AdminAnnonces /><AdminManage /></>}
       {t === 'reglages' && <AdminVenues />}
       {t === 'reglages' && <AdminQr events={events} />}
       {t === 'equipe' && <AdminAgents />}

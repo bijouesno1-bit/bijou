@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { MyAnnonces } from '../components/MyAnnonces'
 import { Link } from 'react-router-dom'
 import { addDoc, collection, doc, getDoc, getDocs, query, serverTimestamp, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
@@ -202,18 +203,7 @@ function Dashboard() {
         <button className={btnGold} disabled={busy}>{busy ? 'Envoi…' : 'Envoyer pour validation'}</button>
       </form>
 
-      {mine.length > 0 && (
-        <div className={card}>
-          <h2 className="text-bijou-goldlight">Mes annonces</h2>
-          {mine.map(m => (
-            <div key={m.id} className="border-t border-bijou-gold/20 pt-2 text-sm">
-              <b>{m.title}</b>
-              <div className={m.status === 'published' ? 'text-bijou-ok' : 'text-bijou-silver'}>{STATUS[m.status] ?? m.status}</div>
-              {m.status === 'refused' && m.refusalReason && <div className="text-xs text-bijou-alert">Motif : {m.refusalReason}</div>}
-            </div>
-          ))}
-        </div>
-      )}
+      {mine.length > 0 && <MyAnnonces labels={STATUS} />}
     </>
   )
 }

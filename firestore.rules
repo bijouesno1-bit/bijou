@@ -69,6 +69,11 @@ service cloud.firestore {
         && request.resource.data.photoUrl is string
         && request.resource.data.photoUrl.size() < 300
         && (request.resource.data.photoUrl == '' || request.resource.data.photoUrl.matches('https://res[.]cloudinary[.]com/aj0kawm2/.*'));
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['photoUrl'])
+        && request.resource.data.photoUrl is string
+        && request.resource.data.photoUrl.size() < 300
+        && (request.resource.data.photoUrl == '' || request.resource.data.photoUrl.matches('https://res[.]cloudinary[.]com/aj0kawm2/.*'));
       allow delete: if false;
     }
     match /events/{id} {
@@ -86,12 +91,23 @@ service cloud.firestore {
           && (!('photos' in request.resource.data) || (request.resource.data.photos is list && request.resource.data.photos.size() <= 6)));
         allow update: if isAdmin() || (isOrganizer()
           && resource.data.get('ownerId', '') == request.auth.uid
-          && resource.data.status == 'pending'
-          && request.resource.data.status == 'pending'
           && request.resource.data.ownerId == request.auth.uid
-          && request.resource.data.diff(resource.data).unchangedKeys().hasAll(['createdAt'])
-          && request.resource.data.keys().hasOnly(['title','date','venue','city','description','status','ownerId','ownerName','category','businessName','logo','contactPhone','contactEmail','lat','lng','maxCapacity','poster','photos','createdAt']));
-        allow delete: if isAdmin();
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title','date','venue','city','description','contactPhone','contactEmail','lat','lng','maxCapacity','poster','photos','logo','businessName','status','hiddenFrom'])
+          && request.resource.data.title is string && request.resource.data.title.size() >= 2 && request.resource.data.title.size() <= 120
+          && request.resource.data.get('description', '').size() <= 1000
+          && (!('photos' in request.resource.data) || (request.resource.data.photos is list && request.resource.data.photos.size() <= 6))
+          && (
+            (request.resource.data.status == resource.data.status
+              && request.resource.data.get('hiddenFrom', '') == resource.data.get('hiddenFrom', ''))
+            || (resource.data.status == 'published' && request.resource.data.status == 'hidden'
+              && request.resource.data.get('hiddenFrom', '') == 'owner')
+            || (resource.data.status == 'hidden' && resource.data.get('hiddenFrom', '') == 'owner'
+              && request.resource.data.status == 'published')
+          ));
+        allow delete: if isAdmin() || (isOrganizer()
+          && resource.data.get('ownerId', '') == request.auth.uid
+          && (resource.data.status in ['pending','refused']
+            || (resource.data.status == 'hidden' && resource.data.get('hiddenFrom', '') == 'owner')));
       }
     match /ticketTypes/{id} {
       allow read: if resource.data.active == true || isAdmin();

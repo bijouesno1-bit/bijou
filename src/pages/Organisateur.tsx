@@ -1,3 +1,4 @@
+import { TicketHistory } from '../components/TicketHistory'
 import { OrgTeam } from '../components/OrgTeam'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { MyAnnonces } from '../components/MyAnnonces'
@@ -206,6 +207,7 @@ function Dashboard() {
 
       {mine.length > 0 && <MyAnnonces labels={STATUS} />}
       <OrgTeam />
+      <TicketHistory mode="organizer" />
     </>
   )
 }

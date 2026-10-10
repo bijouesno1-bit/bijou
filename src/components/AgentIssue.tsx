@@ -1,3 +1,4 @@
+import { TicketHistory } from './TicketHistory'
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { collection, doc, getDoc, getDocFromCache, getDocs, getDocsFromCache, onSnapshot, query, serverTimestamp, setDoc, where, type DocumentReference, type Query } from 'firebase/firestore'
@@ -175,6 +176,7 @@ export function AgentIssue({ onBack }: { onBack: () => void }) {
           ))}
         </div>
       )}
+      <TicketHistory mode="agent" />
       <button className={btn} onClick={onBack}>Retour au scan</button>
     </div>
   )

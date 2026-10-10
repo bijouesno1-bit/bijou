@@ -140,6 +140,8 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow list: if isStaff() && resource.data.issuedBy == request.auth.uid;
       allow list: if isOrganizer() && resource.data.ownerId == request.auth.uid;
+      allow list: if isOrganizer() && get(/databases/$(database)/documents/events/$(resource.data.eventId)).data.get('ownerId', '') == request.auth.uid;
+      allow list: if isStaff() && resource.data.gateId in me().get('gateIds', []);
       allow create: if isAdmin();
       allow create: if isStaff()
         && me().role == 'agent'
@@ -230,6 +232,9 @@ service cloud.firestore {
     match /auditLogs/{id} {
       allow read: if isAdmin();
       allow create: if isAdmin() && request.resource.data.by == request.auth.uid;
+      allow create: if (isOrganizer() || isStaff()) && request.resource.data.by == request.auth.uid
+        && request.resource.data.action == 'ticket_reprint'
+        && request.resource.data.at == request.time;
       allow update, delete: if false;
     }
   }

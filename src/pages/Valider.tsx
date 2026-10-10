@@ -40,6 +40,18 @@ export default function Valider() {
   const mine = !!user && !!r && (isAdmin || (isOrganizer && r.ownerId === user.uid))
   const open = !!r && (r.status === 'pending' || r.status === 'approved') && r.paymentStatus !== 'confirmed'
 
+  const clientDigits = (() => {
+    const d = (r?.phone ?? '').replace(/\D/g, '')
+    if (!d) return ''
+    if (d.startsWith('241') && d.length >= 11) return d
+    return '241' + d.replace(/^0+/, '')
+  })()
+  const trackUrl = r ? window.location.origin + window.location.pathname + '#/demande/' + r.id : ''
+  const waClient = r && r.paymentStatus === 'confirmed' && clientDigits
+    ? 'https://wa.me/' + clientDigits + '?text=' + encodeURIComponent(
+        'BIJOU ' + refOf(r.id) + '\nBonjour ' + r.customerName + ', ton paiement est validé. Voici ton billet :\n' + (r.ticketTokens ?? []).map((tk, i) => ((r.ticketTokens ?? []).length > 1 ? 'Billet ' + (i + 1) + '/' + (r.ticketTokens ?? []).length + ' : ' : '') + window.location.origin + window.location.pathname + '#/billet/' + tk).join('\n') + '\nSuivi de ta demande : ' + trackUrl)
+    : ''
+
   async function validate() {
     if (!user || !r || busy) return
     setBusy(true); setErr('')
@@ -82,7 +94,7 @@ export default function Valider() {
       })
       setStep('view')
       addDoc(collection(db, 'auditLogs'), { requestId: r.id, action: 'paid', note: txRef.trim().slice(0, 60), by: user.uid, at: serverTimestamp() }).catch(() => {})
-      setDone('Réservation validée : les billets sont émis. Le client les voit maintenant sur sa page de suivi.')
+      setDone('Réservation validée : les billets sont émis. Envoie-lui maintenant ses billets sur WhatsApp.')
       await load()
     } catch (x) {
       setErr(x instanceof Error && !('code' in x) ? x.message : 'Validation refusée par le serveur.')
@@ -156,6 +168,7 @@ export default function Valider() {
               <button className={btn} disabled={busy} onClick={() => setStep('view')}>Retour</button>
             </>
           )}
+          {waClient && <a href={waClient} target="_blank" rel="noreferrer" className={btnGold + ' text-center'}>Envoyer les billets au client sur WhatsApp</a>}
           {r.paymentStatus === 'confirmed' && (r.ticketTokens ?? []).map((t, i) => (
             <Link key={t} to={'/billet/' + t} className={btn}>Voir le billet {i + 1}/{r.ticketTokens!.length}</Link>
           ))}

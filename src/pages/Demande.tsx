@@ -52,6 +52,18 @@ export default function Demande() {
   }, [id])
 
   const paid = r?.paymentStatus === 'confirmed'
+
+  useEffect(() => {
+    if (!id || !r || paid) return
+    if (!((r.status === 'pending' && r.waSent) || r.status === 'approved')) return
+    const t = setInterval(async () => {
+      try {
+        const s = await getDoc(doc(db, 'requests', id))
+        if (s.exists()) setR({ id: s.id, ...(s.data() as Omit<Req, 'id'>) })
+      } catch { /* ignore */ }
+    }, 20000)
+    return () => clearInterval(t)
+  }, [id, r?.status, r?.waSent, paid])
   const validateUrl = r ? window.location.origin + window.location.pathname + '#/valider/' + r.id : ''
   const waLink = r && orgWa
     ? 'https://wa.me/' + orgWa + '?text=' + encodeURIComponent(

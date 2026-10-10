@@ -258,6 +258,13 @@ service cloud.firestore {
       allow list: if false;
       allow write: if isAdmin() || isOrganizer();
     }
+    match /pushTokens/{token} {
+      allow create, update: if signedIn() && (isAdmin() || isOrganizer())
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid','createdAt']);
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+      allow read: if false;
+    }
     match /auditLogs/{id} {
       allow read: if isAdmin();
       allow create: if isAdmin() && request.resource.data.by == request.auth.uid;

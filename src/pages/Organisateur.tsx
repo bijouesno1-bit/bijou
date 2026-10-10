@@ -1,3 +1,4 @@
+import { pingRelay } from '../lib/push'
 import { OrgPaySettings } from '../components/OrgPaySettings'
 import { TicketHistory } from '../components/TicketHistory'
 import { OrgTeam } from '../components/OrgTeam'
@@ -143,7 +144,8 @@ function Dashboard() {
     }
     setBusy(true)
     try {
-      await addDoc(collection(db, 'events'), d)
+      const evNotif = await addDoc(collection(db, 'events'), d)
+      if (String((d as { status?: unknown }).status) === 'pending') pingRelay('/notify-event', evNotif.id)
       const when = new Date(f.date).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' })
       const msg = [
         `Bonjour BIJOU, nouvelle demande d'annonce (${catLabel}).`,

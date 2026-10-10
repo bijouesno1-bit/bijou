@@ -7,6 +7,8 @@ import { Avatar } from './Avatar'
 import { ProfilePanel } from './ProfilePanel'
 import { SearchBar } from './SearchBar'
 import { Bell } from './Bell'
+import { PushToggle } from './PushToggle'
+import { disablePush } from '../lib/push'
 import { initFx, ring } from '../lib/alertFx'
 import { useAlerts, type Source } from '../lib/useAlerts'
 import { collection, limit, query, where } from 'firebase/firestore'
@@ -133,10 +135,11 @@ export function Shell({ children }: { children: ReactNode }) {
             {user ? (
               <>
                 <p className="text-sm text-bijou-silver text-center break-all">{user.email}<br /><b className="text-bijou-goldlight">{role}</b></p>
+                {(isAdmin || isOrganizer) && <PushToggle uid={user.uid} />}
                 {isStaff && <ProfilePanel />}
                 {isStaff && <Link to="/scan" onClick={() => setLogin(false)} className={link}>Contrôle d'accès</Link>}
                 {isAdmin && <Link to="/admin?t=tableau" onClick={() => setLogin(false)} className={link}>Espace administrateur</Link>}
-                <button onClick={() => { setLogin(false); logout() }} className={link}>Se déconnecter</button>
+                <button onClick={() => { setLogin(false); disablePush().finally(() => logout()) }} className={link}>Se déconnecter</button>
               </>
             ) : (
               <>
@@ -167,7 +170,7 @@ export function Shell({ children }: { children: ReactNode }) {
               </Link>
             )
           })}
-          {adminMode && <button onClick={() => { setMenu(false); logout() }} className="rounded-xl px-4 py-3 border border-bijou-alert/60 text-bijou-alert text-left active:scale-95 transition">Se déconnecter</button>}
+          {adminMode && <button onClick={() => { setMenu(false); disablePush().finally(() => logout()) }} className="rounded-xl px-4 py-3 border border-bijou-alert/60 text-bijou-alert text-left active:scale-95 transition">Se déconnecter</button>}
         </aside>
       </div>
 

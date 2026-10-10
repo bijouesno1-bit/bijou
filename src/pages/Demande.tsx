@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { doc, getDoc, onSnapshot, serverTimestamp, updateDoc } from 'firebase/firestore'
 import { db } from '../lib/firebase'
+import { pingRelay } from '../lib/push'
 import { PAY_LABEL, STATUS_LABEL, refOf } from '../lib/requests'
 
 type Req = {
@@ -87,6 +88,7 @@ export default function Demande() {
     try {
       await updateDoc(doc(db, 'requests', r.id), { waSent: true, waSentAt: serverTimestamp() })
       setR(prev => (prev ? { ...prev, waSent: true } : prev))
+      pingRelay('/notify-request', r.id)
     } catch {
       setErr("L'envoi n'a pas pu être enregistré. Vérifie ta connexion puis réessaie.")
     }

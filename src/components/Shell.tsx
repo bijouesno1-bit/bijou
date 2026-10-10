@@ -88,6 +88,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const uid = user?.uid ?? ''
   const alertKey = user && (isAdmin || isOrganizer) ? user.uid + (isAdmin ? ':a' : ':o') : ''
   const push = usePush(uid, !!alertKey)
+    const compact = !!user
   const ts = (d: { createdAt?: { toMillis?: () => number } }) => d.createdAt?.toMillis?.() ?? 0
   const reqOrg: Source = {
     q: () => query(collection(db, 'requests'), where('ownerId', '==', uid), where('status', '==', 'pending'), where('waSent', '==', true), limit(50)),
@@ -115,12 +116,12 @@ export function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen">
       <header className="print:hidden fixed top-0 inset-x-0 z-40 h-14 bg-bijou-ivory border-b border-bijou-gold/40 shadow-sm flex items-center justify-between px-3">
-        <Link to={adminMode ? '/admin?t=tableau' : '/'} onClick={() => { setLogin(false); setMenu(false); window.scrollTo({ top: 0 }) }} className="flex min-w-0 flex-1 items-center justify-center gap-3">
-          <img src={`${base}brand/icon.svg`} alt="" className="h-12 w-12" />
+        <Link to={adminMode ? '/admin?t=tableau' : '/'} onClick={() => { setLogin(false); setMenu(false); window.scrollTo({ top: 0 }) }} className="flex min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden">
+          <img src={`${base}brand/icon.svg`} alt="" className={'shrink-0 ' + (compact ? 'h-9 w-9' : 'h-12 w-12')} />
           <span className="flex flex-col leading-none">
             <span
-              className="bg-gradient-to-r from-[#8A6D12] via-bijou-gold to-[#8A6D12] bg-clip-text text-transparent text-3xl font-semibold"
-              style={{ fontFamily: "Georgia, 'Times New Roman', serif", letterSpacing: '0.18em' }}
+              className={'bg-gradient-to-r from-[#8A6D12] via-bijou-gold to-[#8A6D12] bg-clip-text text-transparent font-semibold ' + (compact ? 'text-2xl' : 'text-3xl')}
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif", letterSpacing: compact ? '0.1em' : '0.18em' }}
             >BIJOU</span>
             <span className="mt-1 h-px w-full bg-gradient-to-r from-transparent via-bijou-gold to-transparent" />
           </span>
@@ -138,7 +139,7 @@ export function Shell({ children }: { children: ReactNode }) {
             {user && isStaff && <span className="absolute top-0.5 right-0.5 h-2.5 w-2.5 rounded-full bg-bijou-ok border border-bijou-ivory" />}
             {user && <span className="mt-0.5 block max-w-[44px] truncate text-[9px] font-medium leading-none text-bijou-ink">{shortName}</span>}
           </button>
-          <button aria-label="Menu" onClick={() => setMenu(true)} className="p-2 text-bijou-ink">
+          <button aria-label="Menu" onClick={() => setMenu(true)} className={'text-bijou-ink ' + (compact ? 'p-1' : 'p-2')}>
             <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
               <path d="M4 7h16M4 12h16M4 17h16" />
             </svg>

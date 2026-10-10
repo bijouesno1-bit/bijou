@@ -90,6 +90,8 @@ service cloud.firestore {
         && resource.data.role == 'agent';
     }
     match /events/{id} {
+      allow get: if signedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        && me().role == 'agent' && me().get('eventId', '') == id;
         allow read: if resource.data.status == 'published' || isAdmin()
           || (signedIn() && resource.data.ownerId == request.auth.uid);
         allow create: if isAdmin() || (isOrganizer()
@@ -136,7 +138,24 @@ service cloud.firestore {
     match /tickets/{token} {
       allow get: if true;
       allow list: if isAdmin();
+      allow list: if isStaff() && resource.data.issuedBy == request.auth.uid;
+      allow list: if isOrganizer() && resource.data.ownerId == request.auth.uid;
       allow create: if isAdmin();
+      allow create: if isStaff()
+        && me().role == 'agent'
+        && me().get('ownerId', '') != ''
+        && request.resource.data.keys().hasOnly(['requestId','eventId','ticketTypeId','eventTitle','eventDate','venue','city','ticketName','holderName','seq','count','price','persons','zone','validUntil','status','createdAt','issuedBy','gateId','ownerId','issuedOffline','issuedAt'])
+        && request.resource.data.issuedBy == request.auth.uid
+        && request.resource.data.ownerId == me().ownerId
+        && request.resource.data.eventId == me().get('eventId', '')
+        && request.resource.data.gateId in me().get('gateIds', [])
+        && request.resource.data.status == 'valid'
+        && request.resource.data.price is number
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.issuedAt == request.time
+        && token.size() >= 20
+        && exists(/databases/$(database)/documents/events/$(request.resource.data.eventId))
+        && get(/databases/$(database)/documents/allocations/$(request.resource.data.eventId + '_' + request.auth.uid + '_' + request.resource.data.ticketTypeId)).data.qty > 0;
       allow update: if isAdmin() || (isStaff()
         && resource.data.status == 'valid'
         && request.resource.data.status == 'used'

@@ -1,3 +1,4 @@
+import { AgentIssue } from '../components/AgentIssue'
 import { AgentLoginForm } from '../components/AgentLoginForm'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -86,7 +87,7 @@ function Camera({ onCode }: { onCode: (s: string) => void }) {
     : <video ref={vref} playsInline muted className="w-full max-w-md rounded-xl border border-bijou-gold/40" />
 }
 
-export default function Scan() {
+function ScanInner() {
   const { user, profile, isStaff, loading, logout } = useAuth()
   const [res, setRes] = useState<Res | null>(null)
   const [busy, setBusy] = useState(false)
@@ -228,5 +229,18 @@ export default function Scan() {
       <button className={btn} onClick={logout}>Se déconnecter</button>
       <Link to="/" className={btn}>Retour à l'accueil</Link>
     </div>
+  )
+}
+
+export default function Scan() {
+  const { user, profile, isStaff } = useAuth()
+  const [issue, setIssue] = useState(false)
+  const team = !!user && isStaff && profile?.role === 'agent' && (profile?.gateIds?.length ?? 0) > 0
+  if (team && issue) return <AgentIssue onBack={() => setIssue(false)} />
+  return (
+    <>
+      {team && <button type="button" onClick={() => setIssue(true)} className="fixed bottom-4 right-4 z-50 rounded-xl bg-bijou-gold text-bijou-ink px-4 py-3 font-semibold shadow-lg active:scale-95 transition">Émettre des billets</button>}
+      <ScanInner />
+    </>
   )
 }

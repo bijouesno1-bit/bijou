@@ -136,7 +136,7 @@ service cloud.firestore {
     }
     match /requests/{id} {
       allow get: if true;
-      allow list: if isAdmin();
+      allow list: if isAdmin() || (isOrganizer() && resource.data.ownerId == request.auth.uid);
       allow create: if validRequest();
       allow update: if resource.data.status == 'pending'
         && resource.data.get('waSent', false) == false

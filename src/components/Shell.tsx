@@ -1,11 +1,16 @@
 import { menuBorder } from '../chrome'
-import { useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { InstallBanner } from './InstallBanner'
 import { Avatar } from './Avatar'
 import { ProfilePanel } from './ProfilePanel'
 import { SearchBar } from './SearchBar'
+import { Bell } from './Bell'
+import { initFx, ring } from '../lib/alertFx'
+import { useAlerts, type Source } from '../lib/useAlerts'
+import { collection, limit, query, where } from 'firebase/firestore'
+import { db } from '../lib/firebase'
 
 const base = import.meta.env.BASE_URL
 
@@ -61,6 +66,23 @@ export function Shell({ children }: { children: ReactNode }) {
   const { user, profile, isAdmin, isStaff, isOrganizer, logout } = useAuth()
   const [menu, setMenu] = useState(false)
   const [login, setLogin] = useState(false)
+  useEffect(() => { initFx(base + 'sounds/notif.wav') }, [])
+  const uid = user?.uid ?? ''
+  const alertKey = user && (isAdmin || isOrganizer) ? user.uid + (isAdmin ? ':a' : ':o') : ''
+  const ts = (d: { createdAt?: { toMillis?: () => number } }) => d.createdAt?.toMillis?.() ?? 0
+  const reqOrg: Source = {
+    q: () => query(collection(db, 'requests'), where('ownerId', '==', uid), where('status', '==', 'pending'), where('waSent', '==', true), limit(50)),
+    map: (id, d) => ({ id: 'req-' + id, title: 'Nouvelle réservation', body: d.quantity + ' × ' + d.ticketName, link: '/valider/' + id, at: ts(d) }),
+  }
+  const reqAdmin: Source = {
+    q: () => query(collection(db, 'requests'), where('status', '==', 'pending'), where('waSent', '==', true), limit(50)),
+    map: (id, d) => ({ id: 'req-' + id, title: 'Nouvelle réservation', body: d.quantity + ' × ' + d.ticketName, link: '/admin?t=demandes', at: ts(d) }),
+  }
+  const evAdmin: Source = {
+    q: () => query(collection(db, 'events'), where('status', '==', 'pending'), limit(50)),
+    map: (id, d) => ({ id: 'evt-' + id, title: 'Nouvelle annonce à valider', body: d.title ?? '', link: '/admin?t=evenements', at: ts(d) }),
+  }
+  const alerts = useAlerts(alertKey, isAdmin ? [reqAdmin, evAdmin] : [reqOrg], () => ring())
   const adminMode = isAdmin && pathname.startsWith('/admin')
   const t = new URLSearchParams(search).get('t') ?? 'tableau'
   const tabs = adminMode ? ADMIN_TABS : PUBLIC_TABS
@@ -86,6 +108,7 @@ export function Shell({ children }: { children: ReactNode }) {
           {/* badge admin retiré */}
         </Link>
         <div className="flex shrink-0 items-center gap-0.5">
+          {alertKey && <Bell a={alerts} />}
           <SearchBar />
           <button aria-label="Connexion" onClick={() => setLogin(v => !v)} className="relative flex shrink-0 flex-col items-center px-0.5 py-1 text-bijou-ink">
             {photo && <Avatar url={photo} size={32} />}

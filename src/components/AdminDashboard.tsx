@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { collection, getCountFromServer, getDocs, query, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 
@@ -22,18 +23,21 @@ const TONES: Record<string, string> = {
   'Billets utilisés': 'border-teal-300 text-teal-200',
 }
 
-function Stat({ label, value }: { label: string; value: string | number; tone?: 'warn' }) {
+function Stat({ label, value, onClick }: { label: string; value: string | number; tone?: 'warn'; onClick?: () => void }) {
   return (
-    <div className={'rounded-lg border-2 bg-black/20 p-2 h-20 flex flex-col items-center justify-center text-center ' + (TONES[label] ?? TONES['Demandes en attente'])}>
+    <button type="button" onClick={onClick} className={'w-full active:scale-95 transition rounded-lg border-2 bg-black/20 p-2 h-20 flex flex-col items-center justify-center text-center ' + (TONES[label] ?? TONES['Demandes en attente'])}>
       <span className="text-xl font-semibold">{value}</span>
       <span className="text-xs text-bijou-silver">{label}</span>
-    </div>
+    </button>
   )
 }
 
 export function AdminDashboard() {
   const [d, setD] = useState<D | null>(null)
   const [err, setErr] = useState('')
+  const [, setSp] = useSearchParams()
+  const TICKETS_TAB = 'evenements'
+  const go = (t: string, f?: string) => setSp(f ? { t, f } : { t })
 
   const load = useCallback(async () => {
     try {
@@ -85,12 +89,12 @@ export function AdminDashboard() {
     <div className="w-full max-w-md rounded-xl border border-bijou-gold/40 bg-white/5 p-4 flex flex-col gap-3">
       <h2 className="text-bijou-goldlight">Tableau de bord</h2>
       <div className="grid grid-cols-2 gap-2">
-        <Stat label="Demandes en attente" value={d.pending} tone={d.pending > 0 ? 'warn' : undefined} />
-        <Stat label="Infos demandées" value={d.info} />
-        <Stat label="Paiements à vérifier" value={d.awaitingPay} tone={d.awaitingPay > 0 ? 'warn' : undefined} />
-        <Stat label="Demandes payées" value={d.paid} />
-        <Stat label="Billets émis" value={d.issued} />
-        <Stat label="Billets utilisés" value={d.used + ' (' + rate + ' %)'} />
+        <Stat label="Demandes en attente" value={d.pending} tone={d.pending > 0 ? 'warn' : undefined} onClick={() => go('demandes', 'pending')} />
+        <Stat label="Infos demandées" value={d.info} onClick={() => go('demandes', 'info_needed')} />
+        <Stat label="Paiements à vérifier" value={d.awaitingPay} tone={d.awaitingPay > 0 ? 'warn' : undefined} onClick={() => go('demandes', 'approved')} />
+        <Stat label="Demandes payées" value={d.paid} onClick={() => go('demandes', 'paid')} />
+        <Stat label="Billets émis" value={d.issued} onClick={() => go(TICKETS_TAB)} />
+        <Stat label="Billets utilisés" value={d.used + ' (' + rate + ' %)'} onClick={() => go(TICKETS_TAB)} />
       </div>
       {full && <p className="rounded-lg bg-bijou-alert text-white px-3 py-1 text-sm font-semibold">Alerte : les entrées ont atteint le nombre de billets émis.</p>}
       <div className="text-sm">

@@ -2,6 +2,7 @@ import { globalLeft } from '../lib/capacity'
 import { useCallback, useEffect, useState } from 'react'
 import { collection, doc, getDocs, orderBy, query, runTransaction, serverTimestamp, where, type Timestamp } from 'firebase/firestore'
 import { PayPanel } from './PayPanel'
+import { useSearchParams } from 'react-router-dom'
 import { db } from '../lib/firebase'
 import { useAuth } from '../lib/auth'
 import { PAY_LABEL, STATUS_LABEL, refOf } from '../lib/requests'
@@ -10,7 +11,7 @@ import { sweepExpired } from '../lib/expiry'
 type Req = {
   id: string; eventId: string; ticketTypeId: string; ticketName: string; unitPrice: number; quantity: number; total: number
   customerName: string; phone: string; email?: string; paymentMethod: string; comment?: string
-  status: string; paymentStatus?: string; adminNote?: string; createdAt?: Timestamp
+  status: string; paymentStatus?: string; adminNote?: string; createdAt?: Timestamp; ticketTokens?: string[]
 }
 type Log = { id: string; action: string; note?: string; at?: Timestamp }
 
@@ -31,16 +32,18 @@ const TONE: Record<string, string> = {
   approved: 'border-emerald-400 text-emerald-300',
   refused: 'border-red-400 text-red-300',
   expired: 'border-bijou-silver text-bijou-silver',
+  paid: 'border-emerald-400 text-emerald-300',
   all: 'border-violet-400 text-violet-300',
 }
 const TABS: [string, string][] = [
-  ['pending', 'En attente'], ['info_needed', 'Infos'], ['approved', 'Approuvées'], ['refused', 'Refusées'], ['expired', 'Expirées'], ['all', 'Toutes'],
+  ['pending', 'En attente'], ['info_needed', 'Infos'], ['approved', 'Approuvées'], ['refused', 'Refusées'], ['expired', 'Expirées'], ['paid', 'Payées'], ['all', 'Toutes'],
 ]
 
 export function AdminRequests() {
   const { user } = useAuth()
   const [reqs, setReqs] = useState<Req[]>([])
-  const [filter, setFilter] = useState('pending')
+  const [sp] = useSearchParams()
+  const [filter, setFilter] = useState(sp.get('f') ?? 'pending')
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [logs, setLogs] = useState<Record<string, Log[] | undefined>>({})
   const [busy, setBusy] = useState('')
@@ -114,8 +117,21 @@ export function AdminRequests() {
     }
   }
 
-  const shown = reqs.filter(r => filter === 'all' || r.status === filter)
-  const count = (k: string) => (k === 'all' ? reqs.length : reqs.filter(r => r.status === k).length)
+  const isIn = (r: Req, k: string) => k === 'all' || (k === 'paid' ? r.paymentStatus === 'confirmed' : r.status === k && r.paymentStatus !== 'confirmed')
+  function waUrl(r: Req) {
+    let d = (r.phone ?? '').replace(/\D/g, '')
+    if (!d) return ''
+    if (!(d.startsWith('241') && d.length >= 11)) d = '241' + d.replace(/^0+/, '')
+    const root = window.location.origin + window.location.pathname
+    const track = root + '#/demande/' + r.id
+    const toks = r.ticketTokens ?? []
+    const body = r.paymentStatus === 'confirmed' && toks.length
+      ? 'Bonjour ' + r.customerName + ', ton paiement est validé. Voici ton billet :\n' + toks.map((tk, i) => (toks.length > 1 ? 'Billet ' + (i + 1) + '/' + toks.length + ' : ' : '') + root + '#/billet/' + tk).join('\n') + '\nSuivi de ta demande : ' + track
+      : 'Bonjour ' + r.customerName + ', suis ta demande ici : ' + track
+    return 'https://wa.me/' + d + '?text=' + encodeURIComponent('BIJOU ' + refOf(r.id) + '\n' + body)
+  }
+  const shown = reqs.filter(r => isIn(r, filter))
+  const count = (k: string) => reqs.filter(r => isIn(r, k)).length
 
   return (
     <div className="w-full max-w-md flex flex-col gap-3">
@@ -145,6 +161,7 @@ export function AdminRequests() {
           {r.comment && <p className="text-sm rounded-lg bg-black/30 p-2">{r.comment}</p>}
           {r.adminNote && <p className="text-xs text-bijou-silver">Note envoyée : {r.adminNote}</p>}
           {r.status === 'approved' ? <PayPanel r={r} onDone={load} /> : null}
+          {waUrl(r) && <a href={waUrl(r)} target="_blank" rel="noreferrer" className={(r.paymentStatus === 'confirmed' ? btnGold : btn) + ' text-center'}>{r.paymentStatus === 'confirmed' ? 'Envoyer les billets au client sur WhatsApp' : 'Envoyer le lien de suivi sur WhatsApp'}</a>}
 
           {r.status !== 'refused' && (
             <>

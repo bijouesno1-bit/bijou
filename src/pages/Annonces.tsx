@@ -32,7 +32,8 @@ export default function Annonces() {
   const [mode, setMode] = useViewMode('annonces2')
   const [openId, setOpenId] = useState('')
   const rail = useRef<HTMLDivElement>(null)
-  const toggleScroll = useAutoScroll(rail, state === 'ok' && events.length > 1 && mode === 'large')
+  const toggleScroll = useAutoScroll(rail, state === 'ok' && events.length > 1 && mode === 'large', 50, 10000, events.length)
+  const loopEvents = events.length > 1 ? [...events, ...events, ...events] : events
 
   useEffect(() => {
     (async () => {
@@ -64,8 +65,8 @@ export default function Annonces() {
 
       {has && mode === 'large' && (
         <div ref={rail} onClick={e => { if (!(e.target as HTMLElement).closest("a,button")) toggleScroll() }} className="flex w-full gap-4 overflow-x-auto pb-3" style={{ scrollbarWidth: 'none' }}>
-          {events.map(ev => (
-            <div key={ev.id} className={card + ' shrink-0 w-[85%] max-w-sm'}>
+          {loopEvents.map((ev, i) => (
+            <div key={ev.id + '-' + i} className={card + ' shrink-0 w-[85%] max-w-sm'}>
               {ev.poster && <img src={posterUrl(ev.poster, 800)} alt={ev.title} loading="eager" className="w-full rounded-lg object-contain bg-black/30" />}
               <div className="text-center">
                 <p className="text-xs text-bijou-silver">{num(ev)}</p>

@@ -17,7 +17,7 @@ function dShort(d: string) {
 export default function EventRail() {
   const [events, setEvents] = useState<Ev[]>([])
   const rail = useRef<HTMLDivElement>(null)
-  const toggle = useAutoScroll(rail, events.length > 1)
+  const toggle = useAutoScroll(rail, events.length > 1, 50, 10000, events.length)
 
   useEffect(() => {
     (async () => {
@@ -35,14 +35,15 @@ export default function EventRail() {
   }, [])
 
   if (events.length === 0) return null
+  const loopEvents = events.length > 1 ? [...events, ...events, ...events] : events
 
   return (
     <div className="w-full max-w-md">
       <p className="mb-2 text-center text-sm text-bijou-goldlight">Événements à venir</p>
       <div ref={rail} onClick={e => { if (!(e.target as HTMLElement).closest('a,button')) toggle() }}
         className="flex w-full gap-3 overflow-x-auto pb-2" style={{ scrollbarWidth: 'none' }}>
-        {events.map(ev => (
-          <div key={ev.id} className="flex w-[72%] max-w-[16rem] shrink-0 flex-col gap-2 rounded-xl border border-bijou-gold/40 bg-white/5 p-2">
+        {loopEvents.map((ev, i) => (
+          <div key={ev.id + '-' + i} className="flex w-[72%] max-w-[16rem] shrink-0 flex-col gap-2 rounded-xl border border-bijou-gold/40 bg-white/5 p-2">
             {ev.poster
               ? <img src={posterUrl(ev.poster, 600)} alt={ev.title} loading="eager" className="w-full rounded-lg object-contain bg-black/30" />
               : <div className="aspect-[3/4] w-full rounded-lg bg-black/30" />}

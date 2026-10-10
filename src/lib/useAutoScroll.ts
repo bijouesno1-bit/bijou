@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useRef, type RefObject } from 'react'
 
-// Défilement horizontal automatique avec "stop and go".
+// Défilement horizontal automatique avec "stop and go" et boucle infinie.
+// - loop = nombre d'éléments d'origine : la liste est rendue 3 fois et on reste dans la série du milieu,
+//   ce qui donne 1,2,3…8,1,2,3…8 sans retour en arrière visible.
 // - Glissement / molette : pause, et ça repart après 10 s sans interaction.
-// - toggle() : 1er appel = centre l'affiche la plus visible et fige ;
-//   2e appel = le défilement repart ; 3e appel = fige à nouveau.
-export function useAutoScroll(ref: RefObject<HTMLDivElement | null>, active: boolean, speed = 50, idleMs = 10000) {
+// - toggle() : 1er appel = centre l'affiche la plus visible et fige ; 2e = repart ; 3e = fige.
+export function useAutoScroll(ref: RefObject<HTMLDivElement | null>, active: boolean, speed = 50, idleMs = 10000, loop = 0) {
   const ctl = useRef({ frozen: false, freeze: () => {}, resume: () => {} })
 
   useEffect(() => {
@@ -12,22 +13,49 @@ export function useAutoScroll(ref: RefObject<HTMLDivElement | null>, active: boo
     const c = ctl.current
     c.frozen = false
     if (!el || !active) return
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
 
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     let raf = 0
     let timer = 0
     let paused = false
     let last = 0
+    let period = 0
+
+    const measure = () => {
+      period = 0
+      if (loop > 0 && el.children.length >= loop * 3) {
+        const a = el.children[0] as HTMLElement
+        const b = el.children[loop] as HTMLElement
+        period = b.offsetLeft - a.offsetLeft
+      }
+    }
+    const wrap = () => {
+      if (period <= 0) return
+      const sl = el.scrollLeft
+      if (sl >= 2 * period) el.scrollLeft = sl - period
+      else if (sl < period) el.scrollLeft = sl + period
+    }
+
+    measure()
+    wrap()
     let pos = el.scrollLeft
 
     const tick = (t: number) => {
       const dt = last ? Math.min(t - last, 64) : 0
       last = t
-      const max = el.scrollWidth - el.clientWidth
-      if (!paused && !c.frozen && max > 0) {
-        pos += (speed * dt) / 1000
-        if (pos >= max) pos = 0
-        el.scrollLeft = pos
+      if (!paused && !c.frozen) {
+        if (period > 0) {
+          pos += (speed * dt) / 1000
+          if (pos >= 2 * period) pos -= period
+          el.scrollLeft = pos
+        } else {
+          const max = el.scrollWidth - el.clientWidth
+          if (max > 0) {
+            pos += (speed * dt) / 1000
+            if (pos >= max) pos = 0
+            el.scrollLeft = pos
+          }
+        }
       }
       raf = requestAnimationFrame(tick)
     }
@@ -69,19 +97,24 @@ export function useAutoScroll(ref: RefObject<HTMLDivElement | null>, active: boo
       last = 0
     }
 
+    const onResize = () => { measure(); wrap(); pos = el.scrollLeft }
     const evts = ['pointerdown', 'pointerup', 'touchstart', 'touchend', 'wheel'] as const
     evts.forEach(e => el.addEventListener(e, touch, { passive: true }))
-    raf = requestAnimationFrame(tick)
+    el.addEventListener('scroll', wrap, { passive: true })
+    window.addEventListener('resize', onResize)
+    if (!reduced) raf = requestAnimationFrame(tick)
 
     return () => {
       cancelAnimationFrame(raf)
       window.clearTimeout(timer)
       evts.forEach(e => el.removeEventListener(e, touch))
+      el.removeEventListener('scroll', wrap)
+      window.removeEventListener('resize', onResize)
       c.frozen = false
       c.freeze = () => {}
       c.resume = () => {}
     }
-  }, [ref, active, speed, idleMs])
+  }, [ref, active, speed, idleMs, loop])
 
   return useCallback(() => {
     const c = ctl.current

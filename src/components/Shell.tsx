@@ -8,6 +8,7 @@ import { ProfilePanel } from './ProfilePanel'
 import { SearchBar } from './SearchBar'
 import { Bell } from './Bell'
 import { PushToggle } from './PushToggle'
+import { PushBell, PushStartToast, usePush } from './PushBell'
 import { disablePush } from '../lib/push'
 import { initFx, ring } from '../lib/alertFx'
 import { useAlerts, type Source } from '../lib/useAlerts'
@@ -53,6 +54,21 @@ const ADMIN_MENU = [
   { to: '/', label: 'Voir le site public' },
 ]
 
+function menuIcon(to: string, label: string): ReactNode {
+  const tab = ADMIN_TABS.find(x => x.to === to)
+  if (tab) return tab.icon
+  if (to === '#login') return <><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6" /></>
+  if (to === '/') return label.startsWith('Voir') ? <><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z" /><circle cx="12" cy="12" r="3" /></> : <path d="M3 11l9-8 9 8M5 10v10h5v-6h4v6h5V10" />
+  if (to === '/annonces') return <><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></>
+  if (to === '/reserver') return <><path d="M3 9V6h18v3a2 2 0 0 0 0 6v3H3v-3a2 2 0 0 0 0-6z" /><path d="M9 6v12" /></>
+  if (to === '/lieux') return <><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z" /><circle cx="12" cy="10" r="2.5" /></>
+  if (to === '/aide') return <><circle cx="12" cy="12" r="9" /><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01" /></>
+  if (to === '/apropos') return <><circle cx="12" cy="12" r="9" /><path d="M12 11v5M12 8h.01" /></>
+  if (to === '/organisateur') return label.startsWith('Devenir') ? <><circle cx="9" cy="8" r="3.5" /><path d="M2 20c0-3.5 3-6 7-6M18 14v6M15 17h6" /></> : <><path d="M3 11v3h4l8 4V7L7 11z" /><path d="M19 9a4 4 0 0 1 0 6" /></>
+  if (to === '/scan') return <><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3" /><path d="M8 12h8" /></>
+  return <path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z" />
+}
+
 function publicKey(p: string) {
   if (p === '/') return 'accueil'
   if (p.startsWith('/reserver') || p.startsWith('/demande') || p.startsWith('/annonces')) return 'events'
@@ -71,6 +87,7 @@ export function Shell({ children }: { children: ReactNode }) {
   useEffect(() => { initFx(base + 'sounds/notif.wav') }, [])
   const uid = user?.uid ?? ''
   const alertKey = user && (isAdmin || isOrganizer) ? user.uid + (isAdmin ? ':a' : ':o') : ''
+  const push = usePush(uid, !!alertKey)
   const ts = (d: { createdAt?: { toMillis?: () => number } }) => d.createdAt?.toMillis?.() ?? 0
   const reqOrg: Source = {
     q: () => query(collection(db, 'requests'), where('ownerId', '==', uid), where('status', '==', 'pending'), where('waSent', '==', true), limit(50)),
@@ -110,6 +127,7 @@ export function Shell({ children }: { children: ReactNode }) {
           {/* badge admin retiré */}
         </Link>
         <div className="flex shrink-0 items-center gap-0.5">
+          {alertKey && (push.st === 'off' || push.st === 'error') && <PushBell push={push} />}
           {alertKey && <Bell a={alerts} />}
           <SearchBar />
           <button aria-label="Connexion" onClick={() => setLogin(v => !v)} className="relative flex shrink-0 flex-col items-center px-0.5 py-1 text-bijou-ink">
@@ -127,6 +145,8 @@ export function Shell({ children }: { children: ReactNode }) {
           </button>
         </div>
       </header>
+
+      {alertKey && <PushStartToast push={push} />}
 
       {login && (
         <>
@@ -154,19 +174,31 @@ export function Shell({ children }: { children: ReactNode }) {
 
       <div className={'print:hidden fixed inset-0 z-[60] ' + (menu ? '' : 'pointer-events-none')} aria-hidden={!menu}>
         <div onClick={() => setMenu(false)} className={'absolute inset-0 bg-black/60 transition-opacity duration-300 ' + (menu ? 'opacity-100' : 'opacity-0')} />
-        <aside className={'absolute top-0 right-0 h-full w-72 max-w-[85%] bg-bijou-ink border-l border-bijou-gold/30 p-4 flex flex-col gap-2 text-bijou-ivory overflow-y-auto transition-transform duration-300 ' + (menu ? 'translate-x-0' : 'translate-x-full')}>
+        <aside className={'absolute top-0 right-0 h-full w-80 max-w-[88%] bg-bijou-ink border-l border-bijou-gold/30 p-4 flex flex-col gap-2 text-bijou-ivory overflow-y-auto transition-transform duration-300 ' + (menu ? 'translate-x-0' : 'translate-x-full')}>
           <div className="flex items-center justify-between">
             {adminMode ? <span className="text-xs tracking-widest text-bijou-goldlight">MENU ORGANISATEUR</span> : <span />}
             <button aria-label="Fermer" onClick={() => setMenu(false)} className="p-1 text-bijou-goldlight">
               <svg viewBox="0 0 24 24" className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><path d="M6 6l12 12M18 6L6 18" /></svg>
             </button>
           </div>
+          {alertKey && (push.st === 'off' || push.st === 'error' || push.st === 'denied') && (
+            <button onClick={() => { void push.activate() }} className="flex items-center gap-3 rounded-xl px-3 py-2.5 border border-bijou-gold/60 text-bijou-goldlight text-left active:scale-95 transition">
+              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bijou-gold/15">
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4" /></svg>
+              </span>
+              <span className="min-w-0 flex-1 text-sm leading-tight">{push.st === 'denied' ? 'Alertes bloquées (réglages du navigateur)' : 'Activer les alertes téléphone'}</span>
+            </button>
+          )}
+          {alertKey && push.st === 'on' && <p className="px-3 text-xs text-bijou-goldlight">Alertes téléphone activées</p>}
           {items.map(m => {
             const on = adminMode && m.to.startsWith('/admin') ? m.to.endsWith('t=' + t) : !adminMode && pathname === m.to
             return (
-              <Link key={m.to} to={m.to === '#login' ? pathname + search : m.to} onClick={() => { setMenu(false); if (m.to === '#login') setLogin(true) }}
-                style={menuBorder(m.label)} className={'rounded-xl px-4 py-3 border active:scale-95 transition ' + (on ? 'border-bijou-gold text-bijou-goldlight' : 'border-bijou-silver/20')}>
-                {m.to === '#login' && user ? 'Mon compte' : m.label}
+              <Link key={m.to + m.label} to={m.to === '#login' ? pathname + search : m.to} onClick={() => { setMenu(false); if (m.to === '#login') setLogin(true) }}
+                style={menuBorder(m.label)} className={'flex items-center gap-3 rounded-xl px-3 py-2.5 border active:scale-95 transition ' + (on ? 'border-bijou-gold text-bijou-goldlight' : 'border-bijou-silver/20')}>
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-bijou-gold/15">
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">{menuIcon(m.to, m.label)}</svg>
+                </span>
+                <span className="min-w-0 flex-1 text-sm leading-tight break-words">{m.to === '#login' && user ? 'Mon compte' : m.label}</span>
               </Link>
             )
           })}

@@ -27,7 +27,17 @@ function dShort(d: string) {
   return !d || isNaN(x.getTime()) ? '' : x.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) + ' · ' + x.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
-async function payDoc(eventId: string) {
+const payCache = new Map<string, { at: number; p: ReturnType<typeof payDocRaw> }>()
+function payDoc(eventId: string) {
+  const c = payCache.get(eventId)
+  if (c && Date.now() - c.at < 60000) return c.p
+  const p = payDocRaw(eventId)
+  payCache.set(eventId, { at: Date.now(), p })
+  p.catch(() => payCache.delete(eventId))
+  return p
+}
+
+async function payDocRaw(eventId: string) {
   const e = await getDoc(doc(db, 'events', eventId))
   const owner = e.exists() ? String((e.data() as { ownerId?: string }).ownerId ?? '') : ''
   return getDoc(doc(db, owner ? 'orgPayment' : 'settings', owner || 'payment'))
@@ -149,15 +159,27 @@ export default function Reserver() {
   useEffect(() => {
     (async () => {
       try {
-        const e = await getDocs(query(collection(db, 'events'), where('status', '==', 'published')))
-        const t = await getDocs(query(collection(db, 'ticketTypes'), where('active', '==', true)))
+        type Row = { id: string; data: unknown }
+        let eRows: Row[] | null = null
+        let tRows: Row[] | null = null
+        try {
+          const c = JSON.parse(sessionStorage.getItem('bijou_ev_cache') || 'null')
+          if (c && Date.now() - c.at < 60000) { eRows = c.e; tRows = c.t }
+        } catch { /* ignore */ }
+        if (!eRows || !tRows) {
+          const e = await getDocs(query(collection(db, 'events'), where('status', '==', 'published')))
+          const t = await getDocs(query(collection(db, 'ticketTypes'), where('active', '==', true)))
+          eRows = e.docs.map(d => ({ id: d.id, data: d.data() }))
+          tRows = t.docs.map(d => ({ id: d.id, data: d.data() }))
+          try { sessionStorage.setItem('bijou_ev_cache', JSON.stringify({ at: Date.now(), e: eRows, t: tRows })) } catch { /* ignore */ }
+        }
         const limit = Date.now() - 6 * 3600 * 1000
-        const evs = e.docs
-          .map(d => ({ id: d.id, ...(d.data() as Omit<Ev, 'id'>) }))
+        const evs = eRows
+          .map(d => ({ id: d.id, ...(d.data as Omit<Ev, 'id'>) }))
           .filter(ev => !ev.date || new Date(ev.date).getTime() > limit)
           .sort((a, b) => (a.date || '').localeCompare(b.date || ''))
         setEvents(evs)
-        setTickets(t.docs.map(d => ({ id: d.id, ...(d.data() as Omit<Tt, 'id'>) })))
+        setTickets(tRows.map(d => ({ id: d.id, ...(d.data as Omit<Tt, 'id'>) })))
         setState('ok')
       } catch {
         setState('error')

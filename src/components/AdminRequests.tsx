@@ -1,6 +1,6 @@
 import { globalLeft } from '../lib/capacity'
 import { useCallback, useEffect, useState } from 'react'
-import { collection, doc, getDocs, orderBy, query, runTransaction, serverTimestamp, where, type Timestamp } from 'firebase/firestore'
+import { collection, doc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp, where, type Timestamp } from 'firebase/firestore'
 import { PayPanel } from './PayPanel'
 import { useSearchParams } from 'react-router-dom'
 import { db } from '../lib/firebase'
@@ -47,20 +47,21 @@ export function AdminRequests() {
   const [notes, setNotes] = useState<Record<string, string>>({})
   const [logs, setLogs] = useState<Record<string, Log[] | undefined>>({})
   const [busy, setBusy] = useState('')
+  const [max, setMax] = useState(300)
   const [err, setErr] = useState('')
 
   const load = useCallback(async () => {
     try {
-      let s = await getDocs(query(collection(db, 'requests'), orderBy('createdAt', 'desc')))
+      let s = await getDocs(query(collection(db, 'requests'), orderBy('createdAt', 'desc'), limit(max)))
       if ((await sweepExpired(s.docs)) > 0) {
-        s = await getDocs(query(collection(db, 'requests'), orderBy('createdAt', 'desc')))
+        s = await getDocs(query(collection(db, 'requests'), orderBy('createdAt', 'desc'), limit(max)))
       }
       setReqs(s.docs.map(d => ({ id: d.id, ...(d.data() as Omit<Req, 'id'>) })))
       setErr('')
     } catch {
       setErr('Lecture des demandes impossible (règles Firestore publiées ?).')
     }
-  }, [])
+  }, [max])
 
   useEffect(() => { load() }, [load])
 
@@ -186,6 +187,7 @@ export function AdminRequests() {
           )}
         </div>
       ))}
+      {reqs.length >= max && <button className={btn} onClick={() => setMax(max + 300)}>Charger les demandes plus anciennes</button>}
     </div>
   )
 }

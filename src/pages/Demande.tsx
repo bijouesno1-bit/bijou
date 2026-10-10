@@ -56,12 +56,15 @@ export default function Demande() {
   useEffect(() => {
     if (!id || !r || paid) return
     if (!((r.status === 'pending' && r.waSent) || r.status === 'approved')) return
+    const t0 = Date.now()
     const t = setInterval(async () => {
+      if (document.hidden) return
+      if (Date.now() - t0 > 30 * 60000) { clearInterval(t); return }
       try {
         const s = await getDoc(doc(db, 'requests', id))
         if (s.exists()) setR({ id: s.id, ...(s.data() as Omit<Req, 'id'>) })
       } catch { /* ignore */ }
-    }, 20000)
+    }, 60000)
     return () => clearInterval(t)
   }, [id, r?.status, r?.waSent, paid])
   const validateUrl = r ? window.location.origin + window.location.pathname + '#/valider/' + r.id : ''
@@ -74,6 +77,14 @@ export default function Demande() {
         'Je règle maintenant sur votre numéro de paiement.\n' +
         'Valider ou refuser : ' + validateUrl)
     : ''
+
+  async function refresh() {
+    if (!id) return
+    try {
+      const s = await getDoc(doc(db, 'requests', id))
+      if (s.exists()) setR({ id: s.id, ...(s.data() as Omit<Req, 'id'>) })
+    } catch { /* ignore */ }
+  }
 
   async function sendWa() {
     if (!r || !waLink) return
@@ -144,6 +155,7 @@ export default function Demande() {
               Voir et imprimer mon billet {i + 1}/{r.ticketTokens!.length}
             </Link>
           ))}
+          {!paid && r.status !== 'refused' && <button className={btn} onClick={refresh}>Actualiser ma demande</button>}
           <p className="text-xs text-bijou-silver">Garde cette page en favori : elle te permet de suivre ta demande et de retrouver tes billets.</p>
         </div>
       )}

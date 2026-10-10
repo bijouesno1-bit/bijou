@@ -3,7 +3,7 @@ import { createUserWithEmailAndPassword, onAuthStateChanged, sendPasswordResetEm
 import { doc, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore'
 import { auth, db } from './firebase'
 
-type Profile = { role?: string; active?: boolean; photoUrl?: string; name?: string; category?: string } | null
+type Profile = { role?: string; active?: boolean; photoUrl?: string; name?: string; category?: string; phone?: string; ownerId?: string; eventId?: string; gateIds?: string[] } | null
 type Ctx = {
   user: User | null
   profile: Profile

@@ -1,3 +1,4 @@
+import { deleteEventTeam } from '../lib/eventCascade'
 import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { addDoc, collection, deleteDoc, doc, getDocs, query, serverTimestamp, updateDoc, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
@@ -42,6 +43,7 @@ function AllEvents() {
     try {
       const tt = await getDocs(query(collection(db, 'ticketTypes'), where('eventId', '==', ev.id)))
       for (const t of tt.docs) await deleteDoc(t.ref)
+      await deleteEventTeam(ev.id, (ev as unknown as { ownerId?: string }).ownerId)
       await deleteDoc(doc(db, 'events', ev.id))
       audit('event_delete', ev.id)
       load()

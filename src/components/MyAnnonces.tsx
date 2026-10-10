@@ -1,3 +1,4 @@
+import { deleteEventTeam } from '../lib/eventCascade'
 import { useCallback, useEffect, useState } from 'react'
 import { collection, deleteDoc, doc, getDocs, query, updateDoc, where, type DocumentData } from 'firebase/firestore'
 import { db } from '../lib/firebase'
@@ -32,7 +33,7 @@ export function MyAnnonces({ labels }: { labels?: Record<string, string> }) {
 
   async function remove(ev: Ev) {
     if (!window.confirm('Supprimer définitivement « ' + ev.title + ' » ? Cette action est irréversible.')) return
-    try { await deleteDoc(doc(db, 'events', ev.id)); load() }
+    try { await deleteEventTeam(ev.id, (ev as unknown as { ownerId?: string }).ownerId); await deleteDoc(doc(db, 'events', ev.id)); load() }
     catch { setMsg('Suppression refusée.') }
   }
 

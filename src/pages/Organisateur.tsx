@@ -1,3 +1,4 @@
+import { OrgTeam } from '../components/OrgTeam'
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { MyAnnonces } from '../components/MyAnnonces'
 import { Link } from 'react-router-dom'
@@ -204,6 +205,7 @@ function Dashboard() {
       </form>
 
       {mine.length > 0 && <MyAnnonces labels={STATUS} />}
+      <OrgTeam />
     </>
   )
 }

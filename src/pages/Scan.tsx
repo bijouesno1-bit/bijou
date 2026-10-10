@@ -1,3 +1,4 @@
+import { AgentLoginForm } from '../components/AgentLoginForm'
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { addDoc, collection, doc, getDocs, query, runTransaction, serverTimestamp, where } from 'firebase/firestore'
@@ -86,16 +87,31 @@ function Camera({ onCode }: { onCode: (s: string) => void }) {
 }
 
 export default function Scan() {
-  const { user, isStaff, loading, logout } = useAuth()
+  const { user, profile, isStaff, loading, logout } = useAuth()
   const [res, setRes] = useState<Res | null>(null)
   const [busy, setBusy] = useState(false)
   const [manual, setManual] = useState('')
   const [gates, setGates] = useState<{ id: string; name: string }[]>([])
   const [gate, setGate] = useState(() => { try { return localStorage.getItem('bijou_gate') ?? '' } catch { return '' } })
   const gateName = gates.find(g => g.id === gate)?.name ?? ''
+  const myGateIds = profile?.gateIds ?? []
+  const isTeamAgent = profile?.role === 'agent' && myGateIds.length > 0
+  useEffect(() => {
+    if (!user || !isStaff || !isTeamAgent || !profile?.eventId) return
+    let off = false
+    getDocs(query(collection(db, 'gates'), where('eventId', '==', profile.eventId)))
+      .then(snap => {
+        if (off) return
+        const list = snap.docs.map(d => ({ id: d.id, name: String(d.data().name ?? '') })).filter(g => myGateIds.includes(g.id))
+        setGates(list)
+        setGate(g => (list.some(x => x.id === g) ? g : (list[0]?.id ?? '')))
+      })
+      .catch(() => {})
+    return () => { off = true }
+  }, [user, isStaff, isTeamAgent, profile?.eventId])
 
   useEffect(() => {
-    if (!user || !isStaff) return
+    if (!user || !isStaff || (profile?.role === 'agent' && (profile?.gateIds?.length ?? 0) > 0)) return
     getDocs(query(collection(db, 'checkpoints'), where('active', '==', true)))
       .then(s => setGates(
         s.docs
@@ -149,7 +165,11 @@ export default function Scan() {
     <div className={bg}>
       <img src={`${base}brand/logo-sombre.svg`} alt="BIJOU" className="w-48" />
       <h1 className="text-xl text-bijou-goldlight">BIJOU Scan</h1>
-      <LoginForm />
+      <AgentLoginForm />
+      <details className="w-full max-w-md text-sm text-bijou-silver">
+        <summary className="cursor-pointer text-center">Connexion administrateur</summary>
+        <LoginForm />
+      </details>
       <Link to="/" className={btn}>Retour à l'accueil</Link>
     </div>
   )

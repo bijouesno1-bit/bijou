@@ -53,7 +53,8 @@ service cloud.firestore {
           && request.resource.data.name is string && request.resource.data.name.size() >= 2 && request.resource.data.name.size() <= 80
           && request.resource.data.phone is string && request.resource.data.phone.size() <= 20
           && request.resource.data.createdAt == request.time;
-      allow read: if signedIn() && (request.auth.uid == uid || isAdmin());
+      allow read: if signedIn() && (request.auth.uid == uid || isAdmin()
+        || (isOrganizer() && resource.data.get('ownerId', '') == request.auth.uid));
       allow create: if isAdmin()
         && request.resource.data.role == 'agent'
         && request.resource.data.active == true
@@ -74,7 +75,19 @@ service cloud.firestore {
         && request.resource.data.photoUrl is string
         && request.resource.data.photoUrl.size() < 300
         && (request.resource.data.photoUrl == '' || request.resource.data.photoUrl.matches('https://res[.]cloudinary[.]com/aj0kawm2/.*'));
-      allow delete: if false;
+      allow create: if isOrganizer()
+        && request.resource.data.role == 'agent'
+        && request.resource.data.active == true
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.eventId is string;
+      allow update: if isOrganizer()
+        && resource.data.role == 'agent'
+        && resource.data.get('ownerId', '') == request.auth.uid
+        && request.resource.data.role == 'agent'
+        && request.resource.data.ownerId == resource.data.ownerId
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['active','gateIds','name','phone']);
+      allow delete: if (isAdmin() || (isOrganizer() && resource.data.get('ownerId', '') == request.auth.uid))
+        && resource.data.role == 'agent';
     }
     match /events/{id} {
         allow read: if resource.data.status == 'published' || isAdmin()
@@ -175,6 +188,25 @@ service cloud.firestore {
         && (!('ticketName' in request.resource.data) || (request.resource.data.ticketName is string && request.resource.data.ticketName.size() <= 200))
         && (!('free' in request.resource.data) || request.resource.data.free is bool);
       allow update, delete: if false;
+    }
+    match /gates/{id} {
+      allow read: if signedIn();
+      allow create: if isAdmin() || (isOrganizer() && request.resource.data.ownerId == request.auth.uid);
+      allow update: if isAdmin() || (isOrganizer() && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId);
+      allow delete: if isAdmin() || (isOrganizer() && resource.data.ownerId == request.auth.uid);
+    }
+    match /allocations/{id} {
+      allow read: if signedIn() && (isAdmin() || resource.data.ownerId == request.auth.uid || resource.data.agentId == request.auth.uid);
+      allow create: if isAdmin() || (isOrganizer() && request.resource.data.ownerId == request.auth.uid);
+      allow update: if isAdmin() || (isOrganizer() && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId);
+      allow delete: if isAdmin() || (isOrganizer() && resource.data.ownerId == request.auth.uid);
+    }
+    match /agentLogins/{key} {
+      allow get: if true;
+      allow list: if false;
+      allow write: if isAdmin() || isOrganizer();
     }
     match /auditLogs/{id} {
       allow read: if isAdmin();

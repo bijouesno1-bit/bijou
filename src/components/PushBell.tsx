@@ -1,8 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
-import { enablePush, pushSupported, syncPush } from '../lib/push'
+import { disablePush, enablePush, pushSupported, syncPush } from '../lib/push'
 
 export type PushSt = 'wait' | 'unsupported' | 'off' | 'on' | 'denied' | 'error'
-export type PushCtl = { st: PushSt; activate: () => Promise<void>; msg: string }
+export type PushCtl = { st: PushSt; activate: () => Promise<void>; deactivate: () => Promise<void>; msg: string }
+
+const OFF = 'push_off'
+export function pushDisabledByUser(): boolean {
+  try { return localStorage.getItem(OFF) === '1' } catch { return false }
+}
+function setOffFlag(v: boolean) {
+  try { if (v) localStorage.setItem(OFF, '1'); else localStorage.removeItem(OFF) } catch { /* ignore */ }
+}
 
 export function usePush(uid: string, enabled: boolean): PushCtl {
   const [st, setSt] = useState<PushSt>('wait')
@@ -12,34 +20,34 @@ export function usePush(uid: string, enabled: boolean): PushCtl {
     let alive = true
     ;(async () => {
       if (!(await pushSupported())) { if (alive) setSt('unsupported'); return }
-      if (Notification.permission === 'granted') { await syncPush(uid); if (alive) setSt('on') }
-      else if (alive) setSt(Notification.permission === 'denied' ? 'denied' : 'off')
+      if (Notification.permission === 'granted') {
+        if (pushDisabledByUser()) { if (alive) setSt('off'); return }
+        await syncPush(uid)
+        if (alive) setSt('on')
+      } else if (alive) setSt(Notification.permission === 'denied' ? 'denied' : 'off')
     })()
     return () => { alive = false }
   }, [uid, enabled])
+  const flash = (m: string) => { setMsg(m); setTimeout(() => setMsg(''), 4000) }
   const activate = useCallback(async () => {
+    setOffFlag(false)
     const r = await enablePush(uid)
     setSt(r === 'on' ? 'on' : r === 'denied' ? 'denied' : 'error')
-    setMsg(r === 'on' ? 'Alertes téléphone activées' : r === 'denied' ? 'Alertes bloquées : autorise les notifications dans les réglages du navigateur' : 'Activation impossible, réessaie')
-    setTimeout(() => setMsg(''), 4000)
+    flash(r === 'on' ? 'Alertes téléphone activées' : r === 'denied' ? 'Alertes bloquées : autorise les notifications dans les réglages du navigateur' : 'Activation impossible, réessaie')
   }, [uid])
-  return { st, activate, msg }
-}
-
-export function PushBell({ push }: { push: PushCtl }) {
-  return (
-    <button aria-label="Activer les alertes téléphone" onClick={() => { void push.activate() }} className="relative shrink-0 p-1.5 text-bijou-ink">
-      <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4" /><path d="M4 4l16 16" />
-      </svg>
-    </button>
-  )
+  const deactivate = useCallback(async () => {
+    setOffFlag(true)
+    await disablePush()
+    setSt('off')
+    flash('Alertes téléphone désactivées')
+  }, [])
+  return { st, activate, deactivate, msg }
 }
 
 export function PushStartToast({ push }: { push: PushCtl }) {
   const [show, setShow] = useState(false)
   useEffect(() => {
-    if (push.st !== 'off') return
+    if (push.st !== 'off' || pushDisabledByUser()) return
     try { if (sessionStorage.getItem('push_hint')) return } catch { /* ignore */ }
     setShow(true)
     const t = setTimeout(() => {

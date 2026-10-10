@@ -8,10 +8,11 @@ import { ProfilePanel } from './ProfilePanel'
 import { SearchBar } from './SearchBar'
 import { Bell } from './Bell'
 import { PushToggle } from './PushToggle'
-import { PushBell, PushStartToast, usePush } from './PushBell'
+import { PushStartToast, usePush } from './PushBell'
 import { disablePush } from '../lib/push'
 import { initFx, ring } from '../lib/alertFx'
-import { useAlerts, type Source } from '../lib/useAlerts'
+import { useAlerts, type Alert, type Source } from '../lib/useAlerts'
+import { getPrefs, kindOf, useAlertPrefs, type PrefOpt } from '../lib/alertPrefs'
 import { collection, limit, query, where } from 'firebase/firestore'
 import { db } from '../lib/firebase'
 
@@ -102,7 +103,13 @@ export function Shell({ children }: { children: ReactNode }) {
     q: () => query(collection(db, 'events'), where('status', '==', 'pending'), limit(50)),
     map: (id, d) => ({ id: 'evt-' + id, title: 'Nouvelle annonce à valider', body: d.title ?? '', link: '/admin?t=evenements', at: ts(d) }),
   }
-  const alerts = useAlerts(alertKey, isAdmin ? [reqAdmin, evAdmin] : [reqOrg], () => ring())
+  const alerts = useAlerts(alertKey, isAdmin ? [reqAdmin, evAdmin] : [reqOrg], a => { const p = getPrefs(uid); if (p.sound && p[kindOf(a.id)] !== false) ring() })
+  const { prefs, setPref } = useAlertPrefs(uid)
+  const vis = (a: Alert) => prefs[kindOf(a.id)] !== false
+  const alertsF = { ...alerts, items: alerts.items.filter(vis), unread: alerts.unread.filter(vis) }
+  const prefOpts: PrefOpt[] = isAdmin
+    ? [{ key: 'req', label: 'Nouvelles réservations' }, { key: 'evt', label: 'Annonces à valider' }]
+    : [{ key: 'req', label: 'Réservations sur mes événements' }]
   const adminMode = isAdmin && pathname.startsWith('/admin')
   const t = new URLSearchParams(search).get('t') ?? 'tableau'
   const tabs = adminMode ? ADMIN_TABS : PUBLIC_TABS
@@ -128,8 +135,8 @@ export function Shell({ children }: { children: ReactNode }) {
           {/* badge admin retiré */}
         </Link>
         <div className="flex shrink-0 items-center gap-0.5">
-          {alertKey && (push.st === 'off' || push.st === 'error') && <PushBell push={push} />}
-          {alertKey && <Bell a={alerts} />}
+          
+          {alertKey && <Bell a={alertsF} settings={{ opts: prefOpts, prefs, setPref, push }} />}
           <SearchBar />
           <button aria-label="Connexion" onClick={() => setLogin(v => !v)} className="relative flex shrink-0 flex-col items-center px-0.5 py-1 text-bijou-ink">
             {photo && <Avatar url={photo} size={32} />}

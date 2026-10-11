@@ -86,6 +86,7 @@ export function Shell({ children }: { children: ReactNode }) {
   const { user, profile, isAdmin, isStaff, isOrganizer, logout } = useAuth()
   const [menu, setMenu] = useState(false)
   const [login, setLogin] = useState(false)
+  useEffect(() => { const h = () => setMenu(false); window.addEventListener('bijou:guide', h); return () => window.removeEventListener('bijou:guide', h) }, [])
   useEffect(() => { initFx(base + 'sounds/notif.wav') }, [])
   const uid = user?.uid ?? ''
   const alertKey = user && (isAdmin || isOrganizer) ? user.uid + (isAdmin ? ':a' : ':o') : ''

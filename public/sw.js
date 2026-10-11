@@ -2,7 +2,7 @@
 // (page, scripts, icônes). Les requêtes vers d'autres domaines (Firebase, Firestore)
 // ne sont jamais interceptées : aucun billet ne peut être présenté comme validé sans le serveur.
 // Changer VERSION quand la liste SHELL change. Les fichiers /assets/ ont un nom à empreinte.
-const VERSION = 'bijou-shell-v1'
+const VERSION = 'bijou-shell-v2'
 const SHELL = [
   './',
   'manifest.webmanifest',

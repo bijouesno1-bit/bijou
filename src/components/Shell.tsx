@@ -1,3 +1,4 @@
+import { GuideWidget } from './GuideWidget'
 import { menuBorder } from '../chrome'
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
@@ -122,6 +123,7 @@ export function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen">
+      <GuideWidget />
       <header className="print:hidden fixed top-0 inset-x-0 z-40 h-14 bg-bijou-ivory border-b border-bijou-gold/40 shadow-sm flex items-center justify-between px-3">
         <Link to={adminMode ? '/admin?t=tableau' : '/'} onClick={() => { setLogin(false); setMenu(false); window.scrollTo({ top: 0 }) }} className="flex min-w-0 flex-1 items-center justify-center gap-2 overflow-hidden">
           <img src={`${base}brand/icon.svg`} alt="" className={'shrink-0 ' + (compact ? 'h-9 w-9' : 'h-12 w-12')} />
